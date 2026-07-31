@@ -1,27 +1,30 @@
-`--center` confirmado mata a parte mais chata: sem SCSS de posicionamento, sem override, sem risco de quebrar na próxima major. Troca `--right` por `--center` e o componente fica sem arquivo `.scss` nenhum.
+Todos os caminhos funcionam. Faço o mesmo no `query-liquid-components.mjs` — você vai precisar dos links das stories no briefing pelo mesmo motivo:Ambos funcionando. Atualizo a skill e empacoto:Substitui `query-liquid-classes.mjs` e `query-liquid-components.mjs` (os dois mudaram) e roda:
 
-## O que não dá pra adiar junto com o resto
+```
+node .github/skills/angular-liquid-styling/scripts/query-liquid-classes.mjs snackbar --dir=.github/liquid-catalog --out=docs/briefings/new-component-shared
 
-Você quer só o shared component agora — escopo válido. Mas o fato de ele ter **dois consumidores** (`MessageService` e componentes de feature chamando direto) não é adiável, porque é isso que define a API. Um componente que só funciona sendo dirigido por um serviço vai precisar de retrabalho quando a feature de exclusão de arquivo tentar usar ele direto.
+node .github/skills/angular-liquid-styling/scripts/query-liquid-components.mjs snackbar --dir=.github/liquid-catalog --out=docs/briefings/new-component-shared
+```
 
-A consequência prática: o componente é **burro**. Não injeta `MessageService`, não injeta nada. Recebe estado por `input()`, avisa por `output()`. Quem orquestra é o consumidor, seja o serviço ou a feature.
+Gera `snackbar-classes.md` e `snackbar-componente.md` dentro de `docs/briefings/new-component-shared/`. O diretório é criado sozinho.
 
-O que fica de fora de verdade: onde o host vive no MFE, política de fila, e refatorar o `MessageService`. Esses são problemas de orquestração e podem esperar.
-
-**Efeito colateral de adiar, pra você saber que existe:** com `position: fixed`, dois snackbars simultâneos (um do serviço, um de uma feature) renderizam exatamente sobrepostos. Não é bug do componente, é a ausência da camada de orquestração. Aceitável agora, vira problema quando os dois caminhos estiverem em produção.
-
-## Uma verificação de 30 segundos
-
-Removendo o `data-sb-close`, confirme que o ícone de fechar continua renderizando. Se o CSS do Liquid usar `[data-sb-close]` como seletor (e não só a classe `brad-snackbar__close`), o ícone some. É rápido de checar na story e muda o markup do componente.Invocação:
+Aí a invocação passa a ser:
 
 ```
 /sdd-plan
 Componente snackbar de apresentação na camada shared, com variantes de sucesso e erro,
 usando as classes Liquid e sem SCSS de posicionamento.
 
-#readFile .sdd/briefings/snackbar.md
+#readFile docs/briefings/new-component-shared/briefing-snackbar.md
+#readFile docs/briefings/new-component-shared/snackbar-classes.md
+#readFile docs/briefings/new-component-shared/snackbar-componente.md
 ```
 
-**Correção do que eu disse antes:** falei que seria rigor Full. Com o escopo reduzido ao componente de apresentação — sem host, sem fila, sem `MessageService` — isso é **Lite**. Não tem decisão arquitetural suficiente pra justificar `design.md`. Se o plano classificar como Full, questione o motivo dele.
+**Notas de implementação:**
 
-O plano ainda vai bater nas três decisões que deixei abertas (auto-dismiss, animação de saída, acessibilidade). Cada uma tem recomendação escrita junto, então o Passo 5 deve conseguir fechar sozinho — mas se ele preferir perguntar, responde e segue. São perguntas legítimas, não lacuna de briefing.
+- O `--out` aceita diretório ou arquivo `.md`. Passei o diretório, então o nome sai padronizado (`<termo>-classes.md`). Se preferir nomear você mesmo, é só terminar o caminho com `.md`.
+- Cada recorte carimba **versão do Liquid e data de extração do catálogo**. É isso que deixa detectável depois que um plano foi escrito contra uma versão anterior do DS — sem o carimbo, o recorte é indistinguível de um chute.
+- O comportamento sem `--out` está intacto: continua imprimindo no stdout pra consulta rápida no chat. Não quebrei o uso que você já tem.
+- Recorte vazio avisa no stderr em vez de gerar arquivo silenciosamente — evita você referenciar um `.md` sem nada dentro e o plano assumir que o componente não tem classes.
+
+**O que ainda falta no briefing:** aquela verificação do `data-sb-close` (se o ícone de fechar renderiza sem o atributo) não é dado de catálogo — é inspeção visual no navegador. Ou você confirma antes e escreve a conclusão no briefing, ou ela precisa virar tarefa explícita com passo humano. Se ficar como prosa solta nas restrições, ninguém faz.
