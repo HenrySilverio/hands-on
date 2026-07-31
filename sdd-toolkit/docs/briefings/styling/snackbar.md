@@ -1,85 +1,97 @@
-# Briefing — Componente Snackbar
+# Briefing — Componente Snackbar (shared)
 
 ## Necessidade
 
-Componente Angular standalone para exibir mensagens de feedback ao usuário, com duas
-variantes semânticas (sucesso e erro), usando as classes do Liquid Design System 3.1.0.
+Componente Angular standalone, na camada shared, para exibir mensagens de feedback com duas
+variantes semânticas: sucesso e erro. Usa as classes do Liquid Design System 3.1.0.
 
-O caso de uso principal é o alerta de erro: mensagens disparadas por falha de operação
-(rejeição do backend, erro de validação de negócio, falha de rede), não colocadas
-estaticamente no template de uma tela específica.
+Escopo desta mudança: apenas o componente de apresentação. A orquestração de quando e onde
+exibir fica fora.
+
+## Consumidores previstos
+
+O componente terá dois tipos de consumidor, e isso define sua API:
+
+O `MessageService` existente, que hoje já é injetado nos serviços do data layer e passará a
+renderizar através deste componente.
+
+Componentes de feature chamando diretamente, para erros que não passam pelo serviço — por
+exemplo, falha ao excluir um arquivo importado.
+
+Consequência: o componente é de apresentação pura. Não injeta `MessageService` nem nenhum
+outro serviço, não decide quando aparece, não conhece origem da mensagem. Recebe estado por
+input e comunica interação por output. Um componente que só funcione sendo dirigido por
+serviço precisaria de retrabalho no primeiro uso direto por uma feature.
 
 ## Markup de referência do Liquid
 
-Variante de sucesso:
-
 ```html
-<div id="snackbar-123" class="brad-snackbar brad-snackbar--success brad-snackbar--right">
-  <em class="brad-snackbar__close" data-sb-close="snackbar-123" role="button"></em>
+<div class="brad-snackbar brad-snackbar--success brad-snackbar--center">
+  <em class="brad-snackbar__close" role="button"></em>
   <em class="brad-snackbar__icon"></em>
   <div class="brad-snackbar__content">Text goes here.</div>
 </div>
 ```
 
-Variante de erro: idêntica, trocando `brad-snackbar--success` por `brad-snackbar--error`.
+Variante de erro: trocar `brad-snackbar--success` por `brad-snackbar--error`.
 
-## Comportamento visual esperado
+O modificador `brad-snackbar--center` foi confirmado no catálogo de classes e resolve o
+posicionamento centralizado. O padrão `brad-snackbar--right` não é usado neste projeto.
 
-Posicionado na região inferior da viewport, horizontalmente centralizado, permanecendo
-visível durante o scroll da página.
+O markup original do design system inclui `id` e `data-sb-close`, ambos omitidos aqui — ver
+restrições.
 
-O padrão do Liquid posiciona à direita, via `brad-snackbar--right`. A centralização é um
-desvio deliberado do padrão do design system para este projeto.
+## Comportamento visual
 
-DECISÃO PENDENTE: confirmar via `query-liquid-classes.mjs snackbar` se existe modificador
-de centralização no catálogo. Se existir, usar o modificador e não escrever CSS de
-posicionamento. Se não existir, o SCSS do componente sobrescreve o posicionamento
-horizontal, e essa é a única responsabilidade do SCSS neste componente.
+Posicionado na região inferior da viewport, centralizado horizontalmente, permanecendo
+visível durante o scroll. Esse comportamento vem inteiramente das classes Liquid.
 
 ## Restrições
 
-Não reimplementar em SCSS nada que já exista como classe Liquid. O SCSS do componente
-cobre exclusivamente o posicionamento na viewport.
+Nenhum SCSS de posicionamento. O modificador `--center` já resolve, e reimplementar
+posicionamento em SCSS quebraria na próxima major do design system. Se ao final o componente
+não precisar de nenhuma regra própria, ele não deve ter arquivo de estilo.
 
-Não depender do atributo `data-sb-close` nem do JS do Liquid para o comportamento de
-fechar. O fechamento é responsabilidade do Angular, via handler próprio. Motivo: o JS do
-Liquid varre o DOM em busca desse atributo, e um snackbar renderizado dinamicamente pelo
-Angular após o carregamento inicial pode nunca ser visto por essa varredura. Além disso,
-o `id` referenciado pelo atributo quebra com múltiplas instâncias.
+Não usar `::ng-deep` nem `!important`.
 
-DECISÃO PENDENTE: verificar na story do Storybook se o JS do Liquid aplica alguma animação
-de entrada ou saída que se perca ao ignorar o `data-sb-close`. Se aplicar, decidir entre
-replicar a animação em CSS puro ou aceitar a perda.
+Não depender do atributo `data-sb-close` nem do JS do Liquid para fechar. O JS do Liquid
+varre o DOM procurando esse atributo, e um snackbar renderizado dinamicamente pelo Angular
+pode nunca ser visto por essa varredura. O `id` que o atributo referencia também quebra com
+múltiplas instâncias. O fechamento é handler do Angular.
 
-Não usar `::ng-deep` nem `!important`. Se o ajuste de posicionamento exigir um dos dois,
-isso indica que o seletor está errado ou que falta uma custom property no design system —
-documentar como gap em vez de forçar.
+VERIFICAR antes de implementar: confirmar na story do Storybook que o ícone de fechar
+continua renderizando sem o atributo `data-sb-close`. Se o CSS do Liquid usar esse atributo
+como seletor, e não apenas a classe `brad-snackbar__close`, o markup precisa mantê-lo e a
+estratégia de fechamento precisa ser revista.
 
-Compatível com a arquitetura de micro-frontend do projeto: o componente não pode assumir
-que existe apenas uma instância da aplicação na página.
+O componente não pode assumir instância única na página. A aplicação é micro-frontend.
 
-## Escopo em aberto que o plano precisa fechar
+## Decisões que o plano precisa fechar
 
-Onde vive o host do snackbar na arquitetura de micro-frontends: no shell, compartilhado
-entre remotes, ou um por remote. A escolha determina se dois remotes com erro simultâneo
-empilham snackbars ou disputam o mesmo host.
+Se a mensagem fecha sozinha após um tempo. Se sim, se o tempo é fixo no componente ou vem
+por input, e se erro e sucesso têm tempos diferentes. Recomendação: input opcional de
+duração, componente emite o output de fechamento ao expirar, sem duração significa que só
+fecha por ação do usuário.
 
-Se o `MessageService` existente do data layer passa a renderizar através deste componente,
-ou se o componente é independente dele.
+Se existe animação de saída. Isso determina quem controla a visibilidade: sem animação, o
+consumidor usa bloco condicional no template e o componente nunca conhece o estado oculto;
+com animação, o componente precisa permanecer montado durante a saída e portanto precisa de
+um input de visibilidade. A opção sem animação é mais simples e mais testável.
 
-Comportamento com múltiplas mensagens simultâneas: fila, empilhamento ou substituição.
+Se o wrapper Angular corrige os problemas de acessibilidade do markup do design system, ou
+mantém paridade estrita. Os problemas: o botão de fechar é um elemento `em` com
+`role="button"`, sem `tabindex` e sem rótulo acessível, portanto inalcançável por teclado e
+não anunciado por leitor de tela; e o container não declara região de status, então a
+mensagem não é anunciada ao aparecer. Para alerta de erro em aplicação bancária isso é
+relevante. Recomendação: corrigir no wrapper, documentando como gap do design system.
 
-Se a mensagem fecha sozinha após um tempo, e qual tempo, ou se exige ação do usuário.
+## Fora de escopo
 
-## Acessibilidade
+Onde o host do snackbar vive na arquitetura de micro-frontends.
 
-O markup de referência usa `role="button"` num elemento `em`, sem `tabindex` e sem rótulo
-acessível — o botão de fechar não é alcançável por teclado nem anunciado por leitor de tela.
+Política para múltiplas mensagens simultâneas: fila, empilhamento ou substituição.
 
-O container não declara região de status, então a mensagem não é anunciada quando aparece.
-Para alerta de erro isso é relevante: a mensagem precisa ser percebida por quem não está
-olhando para aquela região da tela.
+Refatoração do `MessageService` para renderizar através deste componente.
 
-O plano deve decidir explicitamente se corrige esses pontos no wrapper Angular ou se
-mantém paridade estrita com o markup do design system. Manter paridade é uma decisão
-válida, mas precisa ser consciente e registrada, não acidental.
+Consequência aceita: com posicionamento fixo e sem camada de orquestração, dois snackbars
+simultâneos renderizam sobrepostos. Isso é esperado enquanto o host único não existir.
