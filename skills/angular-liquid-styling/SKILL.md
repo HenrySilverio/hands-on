@@ -67,6 +67,18 @@ Para consultar, use sempre `scripts/query-liquid-classes.mjs <termo> --dir=../..
 
 Antes de escrever SCSS novo para um padrão visual, rode a consulta pelo termo do componente (ex.: `btn`, `input`, `card`) e confirme que a classe não existe antes de assumir que precisa criar.
 
+## Catálogo de componentes do Storybook
+
+Complementa o catálogo de classes: as classes dizem o que existe no CSS, o catálogo de componentes diz quais componentes o design system documenta e onde ler a story de cada um.
+
+Gerar: `node scripts/extract-liquid-components.mjs <storybook-url> --out=<catalogo> --classes=<catalogo>`. Com `--classes`, cada componente vem cruzado com as classes CSS cujo nome contém o nome do componente — heurística útil como pista, não como verdade; confirme antes de usar.
+
+Consultar: `node scripts/query-liquid-components.mjs <termo> --dir=<catalogo>`, ou `--lista` para ver todos os nomes.
+
+O que o catálogo não tem: a prosa da documentação e os exemplos de código. No Storybook do Liquid esse conteúdo vem de MDX compilado para dentro dos bundles JS, e raspar de lá quebra a cada release. O catálogo entrega o link direto da story — quando o exemplo de código exato importa, abra o link em vez de inferir. Não invente exemplo de uso a partir do nome do componente.
+
+Cada componente costuma ter duas variantes de documentação: HTML e Web Component. Para consumo via classe CSS em template Angular, a variante HTML é a relevante. A variante Web Component é a que usa custom element, e aí vale checar se o componente host precisa de `CUSTOM_ELEMENTS_SCHEMA`.
+
 ## Referência rápida
 
 | Asset Liquid | Como é consumido | Cuidado Angular |
