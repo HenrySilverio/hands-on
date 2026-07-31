@@ -65,6 +65,16 @@ O script detecta `HTTP_PROXY`/`HTTPS_PROXY` no ambiente e monta o túnel `CONNEC
 
 Para consultar, use sempre `scripts/query-liquid-classes.mjs <termo> --dir=../../liquid-catalog` via terminal — o Copilot deve ler a saída filtrada do comando, nunca abrir o `liquid-classes-index.json` inteiro. Um design system atômico tende a ter milhares de classes; carregar o índice inteiro no contexto é o mesmo erro que o `bff-contract` evita com o OpenAPI monolítico.
 
+### Alimentando um briefing de SDD
+
+Comandos de planejamento como `/sdd-plan` costumam não ter acesso a terminal nem a rede, então não conseguem consultar o catálogo por conta própria. Nesses casos o dado precisa chegar já resolvido, como arquivo.
+
+Ambos os scripts de consulta aceitam `--out=<caminho>`, que grava um recorte em markdown em vez de imprimir no stdout. O caminho pode ser um arquivo `.md` ou um diretório; sendo diretório, o arquivo nasce dentro dele e o diretório é criado se não existir. O recorte fica ao lado do briefing e é referenciado junto dele.
+
+O recorte carimba a versão do Liquid e a data de extração do catálogo. Isso é o que permite detectar depois que o plano foi escrito contra uma versão anterior do design system.
+
+Recorte é sempre por termo, nunca o catálogo inteiro: um briefing que referencia o índice completo derrota o motivo de o índice ser consultável.
+
 Antes de escrever SCSS novo para um padrão visual, rode a consulta pelo termo do componente (ex.: `btn`, `input`, `card`) e confirme que a classe não existe antes de assumir que precisa criar.
 
 ## Catálogo de componentes do Storybook

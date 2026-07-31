@@ -2,32 +2,101 @@
 /**
  * Consulta pontual ao catalogo de componentes gerado por extract-liquid-components.mjs.
  *
- * Uso: node query-liquid-components.mjs <termo> [--dir=<diretorio>] [--lista]
+ * Uso: node query-liquid-components.mjs <termo> [--dir=<dir>] [--lista] [--out=<caminho>]
  *
  * Ex.:
  *   node query-liquid-components.mjs button --dir=.github/liquid-catalog
- *   node query-liquid-components.mjs --lista --dir=.github/liquid-catalog
+ *   node query-liquid-components.mjs snackbar --dir=.github/liquid-catalog \
+ *     --out=docs/briefings/new-component-shared
  *
- * Imprime so o resultado filtrado. O Copilot deve ler esta saida, nunca abrir o
- * liquid-components-index.json inteiro.
+ * Sem --out, imprime no stdout: modo de consulta rapida no chat.
+ *
+ * Com --out, grava um recorte em markdown pronto para ser referenciado por #readFile
+ * ao lado de um briefing, pelo mesmo motivo do recorte de classes: o /sdd-plan deve
+ * receber so o que e relevante aquela mudanca, nao o catalogo inteiro.
+ *
+ * O caminho de --out pode ser um arquivo .md ou um diretorio. Sendo diretorio, o arquivo
+ * e criado dentro dele como <termo>-componente.md. Diretorios sao criados se nao existirem.
  */
 
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 const argv = process.argv.slice(2);
 const termo = argv.find((a) => !a.startsWith('--'));
 const soLista = argv.includes('--lista');
 const dirArg = argv.find((a) => a.startsWith('--dir='));
+const outArg = argv.find((a) => a.startsWith('--out='));
 const DIR = dirArg ? dirArg.replace('--dir=', '') : '.';
+const OUT = outArg ? outArg.replace('--out=', '') : null;
 
 if (!termo && !soLista) {
-  console.error('Uso: node query-liquid-components.mjs <termo> [--dir=<diretorio>] [--lista]');
+  console.error('Uso: node query-liquid-components.mjs <termo> [--dir=<dir>] [--lista] [--out=<caminho>]');
   process.exit(1);
 }
 
 function normalizar(t) {
   return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+async function resolverCaminhoSaida(destino, termo) {
+  if (path.extname(destino).toLowerCase() === '.md') {
+    await mkdir(path.dirname(destino), { recursive: true });
+    return destino;
+  }
+  try {
+    const info = await stat(destino);
+    if (!info.isDirectory()) throw new Error(`--out aponta para arquivo sem extensao .md: ${destino}`);
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+  }
+  await mkdir(destino, { recursive: true });
+  return path.join(destino, `${termo}-componente.md`);
+}
+
+function montarMarkdown(termo, achados, meta) {
+  const l = [
+    `# Componentes Liquid para "${termo}"`,
+    '',
+    'Recorte do catalogo de componentes do Storybook do Liquid. Contem o mapa de stories e,',
+    'quando o catalogo foi gerado com cruzamento, as classes CSS provaveis.',
+    '',
+    'Este recorte nao contem a prosa da documentacao nem exemplos de codigo: no Storybook do',
+    'Liquid esse conteudo vem de MDX compilado para dentro dos bundles JS. Quando o exemplo',
+    'exato importar, abra o link da story. Nao infira uso a partir do nome do componente.',
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| Termo consultado | ${termo} |`,
+    `| Fonte | ${meta?.fonte || 'nao informada'} |`,
+    `| Catalogo extraido em | ${meta?.extraidoEm || 'nao informado'} |`,
+    `| Recorte gerado em | ${new Date().toISOString()} |`,
+    `| Componentes no recorte | ${achados.length} |`,
+    '',
+  ];
+
+  if (!achados.length) {
+    l.push(`Nenhum componente encontrado para o termo "${termo}".`, '');
+    return l.join('\n');
+  }
+
+  for (const c of achados) {
+    l.push(`## ${c.componente}`, '', `Grupo: ${c.grupo}`, '');
+    for (const [variante, stories] of Object.entries(c.variantes)) {
+      l.push(`### Variante: ${variante}`, '');
+      for (const s of stories) l.push(`- ${s.story} — ${s.link}`);
+      l.push('');
+    }
+    if (c.classesProvaveis?.length) {
+      l.push('### Classes CSS provaveis', '', 'Cruzamento heuristico por nome. Confirme antes de usar.', '');
+      for (const cls of c.classesProvaveis) l.push(`- \`.${cls}\``);
+      l.push('');
+    }
+  }
+
+  l.push('---', '', 'Regenerar este recorte:', '',
+    `    node .github/skills/angular-liquid-styling/scripts/query-liquid-components.mjs ${termo} --dir=.github/liquid-catalog --out=<este-diretorio>`, '');
+  return l.join('\n');
 }
 
 async function main() {
@@ -42,6 +111,16 @@ async function main() {
 
   const alvo = normalizar(termo);
   const achados = idx.componentes.filter((c) => normalizar(c.componente).includes(alvo));
+
+  if (OUT) {
+    const destino = await resolverCaminhoSaida(OUT, termo);
+    await writeFile(destino, montarMarkdown(termo, achados, idx._meta), 'utf-8');
+    console.error(`Recorte gravado em ${destino} — ${achados.length} componente(s).`);
+    if (!achados.length) {
+      console.error('Atencao: o recorte esta vazio. Confira o termo antes de referencia-lo num briefing.');
+    }
+    return;
+  }
 
   if (!achados.length) {
     console.log(`(nenhum componente contendo "${termo}" — rode --lista para ver todos)`);
