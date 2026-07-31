@@ -1,0 +1,36 @@
+Antes do prompt: esse componente tem três decisões em aberto que, se não forem resolvidas antes, viram retrabalho. E duas delas suas ferramentas novas respondem agora.
+
+## Primeiro, as duas consultas
+
+```
+node .github/skills/angular-liquid-styling/scripts/query-liquid-classes.mjs snackbar --dir=.github/liquid-catalog
+node .github/skills/angular-liquid-styling/scripts/query-liquid-components.mjs snackbar --dir=.github/liquid-catalog
+```
+
+A primeira responde se existe `brad-snackbar--center` (ou equivalente) — se existir, você não escreve CSS de posicionamento nenhum, só troca o modificador. A segunda te dá o link da story pra inspecionar o comportamento real no DevTools.
+
+## As três decisões
+
+**1. O `data-sb-close` é uma armadilha em Angular.** Esse atributo é hook do JS do Liquid: o bundle varre o DOM procurando por ele e liga o handler de fechar. Dois problemas — o `id` hardcoded (`snackbar-123`) quebra com múltiplas instâncias, e se o JS varre no `DOMContentLoaded`, ele nunca vai ver um snackbar que o Angular renderiza depois. **Recomendo o Angular cuidar do fechamento** com `(click)` próprio e ignorar o `data-sb-close`. Perde qualquer animação que o JS do Liquid faça — verifique na story se existe alguma que valha a pena. Brigar com biblioteca que varre DOM dentro de Angular é briga perdida.
+
+**2. "Sempre na visão" versus "próximo ao footer" estão em tensão.** `position: fixed; bottom: N` = sempre visível, ignora o footer completamente, zero JS. A alternativa (parar acima do footer quando ele entra na viewport) exige `IntersectionObserver` e é bem mais complexa. **Li seu requisito como o primeiro** — "próximo ao footer" descrevendo a região visual (base da tela), não uma relação com o elemento footer. Se for o segundo, me avisa que muda o escopo.
+
+**3. Componente ou serviço?** "Alerta de erro na tela" sugere que é disparado por evento (interceptor, store), não colocado estaticamente num template. Isso pede componente burro + serviço que o controla, com um host único. **E aí tem uma pergunta de MFE que só você responde:** o host do snackbar vive no shell ou cada remote tem o seu? Se cada remote tiver, dois remotes com erro simultâneo empilham snackbars. Se for no shell, precisa de comunicação cross-MFE.
+
+Você já tem um `MessageService` no data layer — se o snackbar for a superfície de renderização dele, isso deveria entrar no escopo.Salva como `.sdd/briefings/snackbar.md` (ou onde você guarda briefing) e invoca:
+
+```
+/sdd-plan
+Componente snackbar standalone com variantes de sucesso e erro, posicionado
+fixo e centralizado na base da viewport, usando classes do Liquid.
+
+#readFile .sdd/briefings/snackbar.md
+```
+
+Não passo `contexto adicional` de propósito — o Passo 1 do seu prompt lê exatamente o que você lista, e o briefing já carrega o markup de referência. Se o `MessageService` entrar no escopo, aí sim adiciona o caminho dele.
+
+**O que esperar:** o plano vai fazer perguntas. Deixei quatro itens em "escopo em aberto" e dois "DECISÃO PENDENTE" que dependem das consultas — o Passo 5 do seu `/sdd-plan` vai bater nesses e parar pedindo definição, que é o comportamento correto. Rode as duas consultas antes e preencha as pendências no briefing; aí o plano sai completo de primeira em vez de ir e voltar.
+
+**Rigor:** provavelmente Full, não Lite. Não é o componente que é complexo — é a decisão de host em MFE e a política de fila que merecem `design.md`.
+
+**Se depois for só ajuste** (posicionamento errado, cor de variante fora do spec), aí não passa por SDD nenhum. Vai direto no chat: cola o template e o SCSS, e pede o checklist de diagnóstico da skill antes de qualquer alteração de CSS.
