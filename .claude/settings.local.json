@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /private/tmp/claude-502/-Users-henriquesilverio-Downloads-hands-on/e4fd9d9c-de2c-4c0f-b383-40a3fd8cf596/scratchpad/archify)",
+      "Read(//Users/henriquesilverio/.agents/skills/archify/**)",
+      "Bash(node bin/archify.mjs validate lifecycle /private/tmp/claude-502/-Users-henriquesilverio-Downloads-hands-on/e4fd9d9c-de2c-4c0f-b383-40a3fd8cf596/scratchpad/archify/copilot-billing.lifecycle.json --quality showcase --json)",
+      "Bash(node bin/archify.mjs validate lifecycle /private/tmp/claude-502/-Users-henriquesilverio-Downloads-hands-on/e4fd9d9c-de2c-4c0f-b383-40a3fd8cf596/scratchpad/archify/copilot-billing.lifecycle.json --quality showcase)",
+      "Bash(node bin/archify.mjs validate --help)"
+    ]
+  }
+}
