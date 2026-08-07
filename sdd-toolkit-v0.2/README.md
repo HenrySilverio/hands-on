@@ -1,0 +1,500 @@
+# SDD para GitHub Copilot Chat
+
+Fluxo guiado por especificação para VS Code, em markdown puro. Sem CLI, sem instalação
+global, sem dependência de npm. Você copia duas pastas para o seu repositório e o fluxo
+existe.
+
+O objetivo é duplo e os dois lados são inegociáveis: **código pronto para produção** e
+**economia de token**. Tudo neste toolkit existe porque paga um dos dois. O que não pagava
+foi retirado.
+
+Versão 0.2. O que mudou desde a 0.1 está na seção 11.
+
+---
+
+## 1. O problema que isso resolve
+
+Pedir código direto ao Copilot funciona bem para tarefas pequenas e falha de forma cara
+em tarefas médias. A falha tem sempre a mesma forma: o modelo assume o que você não
+disse, você só descobre na revisão, e a correção custa mais do que teria custado
+escrever o acordo antes.
+
+O fluxo separa julgamento de execução. O julgamento acontece uma vez, por escrito, num
+modelo caro. A execução acontece muitas vezes, contra um documento, num modelo barato. A
+revisão confere execução contra julgamento, sem reabrir o julgamento.
+
+Efeito colateral que importa tanto quanto: o contexto que cada etapa carrega é conhecido
+e pequeno. Você deixa de mandar o repositório inteiro para o modelo porque não sabe do
+que ele precisa.
+
+**Antes do briefing existir**, há um toolkit irmão, o `sdd-discovery`, que entrevista a
+necessidade até virar o arquivo que o `/sdd-plan` consome. Ele é opcional e independente.
+
+---
+
+## 2. Instalação
+
+Copie para a raiz do seu repositório:
+
+```code
+.github/prompts/          os quatro comandos
+.github/skills/           o contrato do fluxo
+.sdd/                     mudanças, specs, decisões e o validador
+docs/briefings/           onde você escreve os pedidos
+```
+
+Não há passo dois. Não há build, não há `npm install`, não há binário.
+
+Dependências: Git, só em leitura. Node 18+ para `node .sdd/sdd.mjs validate`, que é opcional —
+sem ele o fluxo funciona, você só confere os portões mecânicos à mão.
+
+No VS Code, confirme que os prompt files estão habilitados. Em `settings.json`:
+
+```json
+{
+  "chat.promptFiles": true
+}
+```
+
+Depois disso, digitar `/sdd-plan` no Copilot Chat funciona.
+
+Versione as quatro pastas. `.sdd/` é documentação do projeto, não artefato de build:
+entra no commit, entra no pull request, é revisado como código.
+
+---
+
+## 3. As três camadas
+
+Este é o conceito que mais gera confusão, e o único que você precisa entender antes de
+usar. Documentos diferentes falam do mesmo assunto respondendo perguntas diferentes.
+
+| Documento | Onde vive            | Responde                     | Quem escreve   | Vida útil    |
+| --------- | -------------------- | ---------------------------- | -------------- | ------------ |
+| briefing  | `docs/briefings/`    | o que dói hoje               | você, à mão    | descartável  |
+| proposta  | `.sdd/changes/<id>/` | o que **vamos fazer**        | `/sdd-plan`    | até arquivar |
+| spec      | `.sdd/specs/`        | o que o sistema **faz**      | `/sdd-archive` | permanente   |
+| decisão   | `.sdd/decisoes/`     | **por que** ele é assim      | `/sdd-archive` | permanente   |
+
+O briefing é matéria-prima. Ele é lido uma vez, no planejamento, e suas restrições são
+transcritas para a proposta. Depois disso ninguém mais o lê — uma cópia fica em
+`briefing.md` dentro da mudança apenas para auditoria.
+
+A proposta é o acordo. É contra ela que a implementação é feita e é contra ela que a
+revisão julga.
+
+A spec é o estado do sistema. Ela só muda no arquivamento, quando uma mudança aprovada é
+absorvida. É por isso que a implementação tem proibição explícita de editá-la: spec
+editada durante a implementação deixa de ser acordo prévio e vira diário do que foi
+feito.
+
+### Por que a camada de decisões existe
+
+`specs/` diz o que o sistema faz. Nada dizia por quê.
+
+Sem essa camada, o motivo de uma escolha mora em `design.md`, que é por mudança e vai
+inteiro para o archive. Seis meses depois, "por que a normalização acontece no BFF e não no
+MFE?" só se responde lendo quarenta pastas arquivadas — e ninguém lê. Na prática, a
+alternativa que já foi descartada volta como proposta nova, e alguém a implementa.
+
+Decisão arquitetural tem vida útil maior que a mudança que a produziu e diferente da spec.
+Spec muda quando o comportamento muda; decisão muda quando alguém a substitui, o que é raro e
+é exatamente o evento que precisa ficar registrado.
+
+O mecanismo é o mesmo dos deltas, e por isso custa quase nada: o `/sdd-plan` escreve o texto
+final e marca `Durabilidade: permanente`, o `/sdd-archive` copia literalmente e aloca o
+número. Nenhum julgamento novo, nenhum comando novo.
+
+**O filtro é estreito de propósito.** Só sobe decisão que passa nos três testes: difícil de
+reverter, surpreendente sem contexto, e com trade-off real. Escolher entre duas bibliotecas
+equivalentes não é isso. Se tudo virasse decisão permanente, `decisoes/` viraria o archive de
+novo, e a camada perderia a razão de existir.
+
+### Cobertura parcial é o estado normal
+
+Num repositório que já existe, `.sdd/specs/index.md` e `.sdd/decisoes/index.md` nascem vazios
+e crescem só pelo que o fluxo tocar. Isso é esperado. A regra que impede o desastre está
+escrita nos próprios índices: **ausência significa "não documentado", nunca "não existe"**.
+Nenhuma etapa pode concluir que um comportamento não existe por não achá-lo na spec.
+
+---
+
+## 4. Os quatro comandos
+
+### `/sdd-plan`
+
+Entrada: caminho de um briefing em `docs/briefings/`, mais caminhos de contexto
+opcionais.
+
+Lê o briefing, extrai as restrições, consulta o índice de capacidades, lê só as
+capacidades afetadas, consulta o índice de decisões e declara conflito com decisão vigente,
+olha as mudanças abertas, classifica o rigor, determina branch e base, e escreve a pasta da
+mudança.
+
+Saída em disco: `briefing.md` (cópia literal), `proposta.md`, `tarefas.md`, `design.md`
+se rigor Full, e `deltas.md` se houver mudança de comportamento.
+
+Se houver ambiguidade que impeça escrever um critério de aceite verificável, ele não
+escreve nada — lista as perguntas e para. Isso é a feature, não um defeito.
+
+### `/sdd-implement`
+
+Entrada: change-id.
+
+Confere que você está na branch declarada na proposta e para se não estiver. Lê proposta,
+design, tarefas — nessa ordem — e só depois lê código. Executa **um agrupamento por
+invocação**, escolhendo o de menor número entre os liberados pelos bloqueios.
+
+Não lê o briefing, não lê os deltas, não toca em `specs/` nem em `decisoes/`. Se um critério
+se revelar errado, para e reporta em vez de ajustar a proposta em silêncio.
+
+Não comita — mas te lembra de commitar. Fatia fechada é o ponto do commit, e sem commit o
+`/sdd-review` não tem diff para revisar.
+
+### `/sdd-review`
+
+Entrada: change-id, e opcionalmente qual eixo rodar.
+
+Audita em **dois eixos independentes** e emite **dois vereditos**.
+
+O eixo de padrões roda primeiro e não lê a proposta: ele vê o diff e as regras declaradas do
+repositório, e nada mais. O eixo de especificação roda depois, com a proposta, e confere
+critério contra código e teste, tarefa marcada contra evidência, o que cada agrupamento
+demonstra, a conferência bidirecional dos deltas, e a marcação das decisões.
+
+APROVADO ou REPROVADO em cada eixo. Não existe "aprovado com ressalvas" — isso é reprovado
+com educação. Não existe veredito consolidado: o arquivamento exige os dois.
+
+Os vereditos são gravados em `.sdd/changes/<id>/revisao/<eixo>-<commit>.md`, um arquivo por
+execução, nunca editados. É a única escrita que a revisão faz — ela não declara ferramenta de
+edição, então não tem como tocar no código que audita. Existe porque veredito que só aparece
+no chat é inverificável pela etapa seguinte: o archive teria que acreditar em quem o invocou.
+
+### `/sdd-archive`
+
+Entrada: change-id.
+
+Etapa mecânica. Lê `revisao/` e exige os dois vereditos aprovados **sobre o HEAD atual da
+branch** — se você commitou depois da revisão, a mudança não está revisada e ele para. Aplica
+os deltas em `specs/` copiando o texto literalmente, promove as decisões marcadas como
+permanentes para `decisoes/` alocando os números, atualiza os dois índices, e move a pasta para
+`.sdd/changes/archive/AAAA-MM-DD-<change-id>/`.
+
+Se um alvo de `SUBSTITUIR`, `REMOVER` ou `Substitui:` não existir, ele para antes de escrever
+qualquer arquivo. Aplicação parcial deixaria `specs/` ou `decisoes/` num estado que não
+corresponde a nenhuma mudança.
+
+---
+
+## 5. O ciclo, do começo ao fim
+
+```tree
+docs/briefings/idempotencia-confirmacao.md      você escreve à mão
+        │
+        │  /sdd-plan
+        ▼
+.sdd/changes/adicionar-idempotencia-confirmacao/
+        ├── briefing.md      cópia literal, auditoria
+        ├── proposta.md      o acordo, com Ticket, Branch e Base
+        ├── design.md        só em rigor Full, com Durabilidade em cada decisão
+        ├── tarefas.md       fatias verticais, com Demonstra e Bloqueado por
+        └── deltas.md        o que vai mudar em specs/
+        │
+        │  /sdd-implement    um agrupamento por invocação
+        │  git commit        seu, não do fluxo. Uma fatia por commit
+        ▼
+        │  /sdd-review       grava revisao/: dois eixos, dois vereditos
+        ▼
+        │  /sdd-archive      confere revisao/ contra o HEAD
+        ▼
+.sdd/specs/confirmacao-efetivacao/spec.md       atualizado
+.sdd/decisoes/DEC-003-idempotencia-por-contrato.md   promovida
+.sdd/changes/archive/2026-07-28-adicionar-idempotencia-confirmacao/
+```
+
+O laço `implement → commit` se repete uma vez por agrupamento. A revisão roda quando a última
+fatia fechou.
+
+Um chat novo por etapa. Isso não é preciosismo — é a diferença entre carregar 8 mil
+tokens e carregar 60 mil. Detalhes em `docs/guia-contexto-e-modelos.md`.
+
+---
+
+## 6. Fatia vertical
+
+Cada agrupamento de `tarefas.md`, exceto o de Verificação, atravessa todas as camadas
+necessárias para produzir comportamento demonstrável, e cabe numa sessão. Agrupar por camada é
+proibido.
+
+Fatia horizontal — todo o backend, depois todo o frontend — não entrega nada até a última
+landar, esconde a dependência entre camadas até tarde demais, e transforma qualquer
+interrupção em trabalho pela metade.
+
+Cada agrupamento abre com duas linhas:
+
+```markdown
+### 2. Confirmação idempotente na tela
+Demonstra: uma segunda confirmação do mesmo contrato mostra o acordo existente.
+Bloqueado por: 1
+```
+
+`Demonstra:` responde "o que dá para mostrar funcionando quando isto fechar", e a resposta é
+comportamento, nunca camada. "A camada de serviço está pronta" reprova o agrupamento inteiro.
+
+Dois literais são obrigatórios, porque campo esquecido e "sem bloqueio" precisam ser
+distinguíveis: o primeiro agrupamento escreve `Bloqueado por: nenhum`, e o de Verificação
+escreve `Bloqueado por: todos` e não tem `Demonstra:`.
+
+Isso é o que dá ao `/sdd-implement` uma unidade de trabalho honesta: ele executa um
+agrupamento por invocação, o que mantém o contexto pequeno e dá um ponto natural de commit.
+
+**Se a mudança não couber em poucos agrupamentos, não é um plano grande: são duas mudanças.**
+O fluxo não tem orquestração multi-sessão, e fingir que tem seria pior que a limitação. Corte
+a mudança e planeje a primeira.
+
+---
+
+## 7. Git
+
+O fluxo **lê Git e não escreve Git**. Nenhum comando cria branch, comita, abre pull request ou
+muda o estado do repositório fora de `.sdd/`.
+
+O que ele faz é se recusar a trabalhar no lugar errado:
+
+| Comando          | O que faz com Git                                              |
+| ---------------- | -------------------------------------------------------------- |
+| `/sdd-plan`      | determina base e branch de trabalho, e grava as duas na proposta |
+| `/sdd-implement` | confere que a branch atual é a declarada, e para se não for     |
+| `/sdd-review`    | obtém o diff entre branch e base. Sem diff, não revisa          |
+| `/sdd-archive`   | nada                                                            |
+
+O nome da branch segue o padrão das instructions do projeto. Sem padrão declarado, usa o
+change-id.
+
+**Commitar é seu, e o momento é o fechamento de cada fatia.** Nenhum comando comita, e o
+`/sdd-implement` termina lembrando disso — sem commit, o diff vem vazio e a revisão para.
+
+A escolha de não escrever é deliberada: dar poder de commit a um agente quebraria a regra de
+escopo de escrita que sustenta o resto do fluxo, e a rastreabilidade que interessa numa
+auditoria — ticket, change-id, branch — já está escrita na proposta desde o planejamento.
+
+Seja honesto sobre a natureza dessa garantia: ela é **uma regra do contrato, não uma trava
+técnica**. Três prompts declaram terminal porque precisam rodar teste, lint e mover pasta, e
+terminal inclui `git commit`. Se você quiser a garantia de verdade, restrinja a allowlist de
+comandos do Copilot na sua organização a leitura de Git, `mv` e os comandos de build.
+
+Implementar na branch errada empilha uma mudança em cima de outra, e a revisão julga isso como
+escopo expandido e reprova, corretamente. Parar no Passo 1 é mais barato.
+
+---
+
+## 8. Roteamento de modelo
+
+As quatro etapas não têm a mesma dificuldade, e usar o mesmo modelo nas quatro é desperdício
+de um lado e risco do outro.
+
+| Comando          | Natureza do trabalho                                                     | Modelo no front matter |
+| ---------------- | ------------------------------------------------------------------------ | ---------------------- |
+| `/sdd-plan`      | julgamento aberto: decidir escopo, criar critérios, escrever delta final | Opus 5                 |
+| `/sdd-implement` | execução contra documento, com verificação a cada passo                  | Sonnet 5               |
+| `/sdd-review`    | achar o que está errado, ceticismo                                       | Opus 5                 |
+| `/sdd-archive`   | copiar texto e mover pasta, zero julgamento                              | Sonnet 5               |
+
+Para trocar, edite a linha `model:` no front matter do prompt. Use exatamente o nome que
+aparece no seletor de modelo do Copilot Chat na sua organização — um nome inválido
+quebra o prompt para todo mundo que copiar a pasta.
+
+O plan e o review pagam modelo caro porque erro nessas etapas se propaga: critério
+mal-escrito vira código errado, revisão complacente vira dívida. O archive não paga,
+porque cópia literal de texto não melhora com inteligência — se a sua organização expõe um
+modelo mais barato que o Sonnet, o archive é o primeiro lugar para usá-lo.
+
+---
+
+## 9. Rigor: Lite e Full
+
+O padrão é **Lite**: proposta e tarefas, sem design.
+
+Suba para **Full** — que exige `design.md` — quando houver ao menos um destes:
+
+- mudança de contrato entre camadas;
+- operação irreversível ou migração de dados;
+- exigência regulatória ou de segurança;
+- mais de um repositório envolvido;
+- decisão durável, pelos três testes: difícil de reverter, surpreendente sem contexto, e com
+  trade-off real;
+- substituição de uma decisão já vigente em `.sdd/decisoes/`.
+
+Os dois últimos alimentam `decisoes/`, e são estreitos: amarrar formato de dado, contrato
+entre camadas ou modelo de consistência por anos sobe o rigor; escolher entre duas
+bibliotecas equivalentes, não.
+
+Alterar `specs/` **não** sobe o rigor. Quase toda mudança útil altera comportamento
+observável; se isso bastasse, o rigor Lite deixaria de existir na prática.
+
+Cerimônia acima do risco é desperdício, e desperdício de cerimônia é o que faz equipe
+abandonar processo.
+
+### Quando a implementação descobre uma decisão durável
+
+Acontece, e o fluxo tem uma saída: o `/sdd-implement` para e reporta, como em qualquer
+divergência, e você reinvoca o `/sdd-plan` no **mesmo change-id**. O rigor sobe, `design.md`
+nasce, o motivo entra em `## Divergências`, e as tarefas já marcadas são preservadas.
+
+O implement não registra decisão em nenhuma hipótese. Se pudesse, a decisão deixaria de ser
+acordo prévio e viraria justificativa do que já foi feito — que é exatamente o que a camada
+`decisoes/` existe para não ser.
+
+---
+
+## 10. Anti-padrões
+
+**Escrever critério de aceite no briefing.** O briefing descreve o problema. Critério é
+resultado do planejamento e precisa ser verificável, o que exige olhar o estado atual.
+
+**Rodar as quatro etapas no mesmo chat.** Na quarta etapa o contexto carrega o lixo das
+três anteriores, o custo por mensagem sobe e a qualidade cai.
+
+**Deixar o implement "ajustar" a proposta.** No momento em que a proposta passa a
+descrever o que foi feito, ela deixa de servir para revisar o que foi feito.
+
+**Editar `.sdd/specs/` ou `.sdd/decisoes/` à mão.** As duas são resultado de mudança
+aprovada. Editá-las diretamente cria comportamento e justificativa que ninguém revisou.
+
+**Marcar toda decisão como permanente.** `decisoes/` vira o archive de novo e ninguém lê.
+Aplique os três testes.
+
+**Aceitar delta sem critério.** É escopo entrando pela porta dos fundos: comportamento
+que ninguém negociou e ninguém testou.
+
+**Agrupar tarefa por camada.** Fatia horizontal não demonstra nada até a última landar.
+
+**Ler `specs/` ou `decisoes/` inteiro.** Existe um índice justamente para isso. Camada
+sempre-ativa é regressão de economia de token disfarçada de organização.
+
+**Backfill em massa.** Documentar cinquenta capacidades ou vinte decisões de uma vez produz
+registro sem critério e sem revisão. As camadas crescem pelo fluxo ou não crescem.
+
+---
+
+## 11. O que mudou na 0.2
+
+| Mudança | Motivo |
+| ------- | ------ |
+| Camada `.sdd/decisoes/`, alimentada pelo archive | o rationale morria no archive e a alternativa descartada voltava como proposta |
+| `/sdd-review` com dois eixos e dois vereditos | o eixo spec sozinho aprovava código que violava todo padrão do repositório |
+| Fatia vertical obrigatória em `tarefas.md` | não havia unidade de trabalho honesta, e agrupamento por camada escondia dependência |
+| `Ticket`, `Branch` e `Base` na proposta, conferidos | implementar na branch errada era invisível até a revisão |
+| Roteamento de modelo corrigido | o implement rodava em Opus e o review em Sonnet, o inverso do que a doutrina manda |
+| `revisao/`, escrito pelo review e conferido pelo archive | veredito que só existia no chat era inverificável: o archive acreditava em quem o invocava |
+| `.sdd/sdd.mjs`, o validador | os quatro itens acima criaram portões sintáticos, e o próprio README manda escrever regra sintática em código |
+
+Nenhuma mudança altera o formato do briefing, então o `sdd-discovery` e qualquer briefing já
+escrito continuam válidos.
+
+**O que isso custou.** O contexto carregado por invocação subiu em todas as quatro etapas:
+
+| Etapa            | v0.1  | v0.2  |
+| ---------------- | ----- | ----- |
+| `/sdd-plan`      | 2.382 | 4.168 |
+| `/sdd-implement` | 1.241 | 2.477 |
+| `/sdd-review`    | 1.281 | 3.587 |
+| `/sdd-archive`   | 2.137 | 3.432 |
+
+Palavras, não tokens, e sem contar o que é lido sob demanda. É o preço de mecanismos que antes
+não existiam — o eixo de padrões, sozinho, é metade do salto da revisão — e ele é pago em
+modelo caro nas duas pontas.
+
+Se o seu time só quer o que mais paga por palavra, adote os metadados de Git e o roteamento de
+modelo: juntos custam menos de cem palavras e resolvem duas classes de erro.
+
+O validador puxa na direção oposta e vai continuar puxando: cada portão que ele absorve sai do
+markdown. Esta versão já move os sintáticos para lá; a próxima deveria mover o resto que for
+mecanizável.
+
+Migração de um repositório que já usa a 0.1: copie `.sdd/sdd.mjs`, crie
+`.sdd/decisoes/index.md`, acrescente os três metadados no topo das propostas abertas, e
+acrescente `Demonstra:` e `Bloqueado por:` nos agrupamentos de `tarefas.md`. Rode
+`node .sdd/sdd.mjs validate` para achar o que faltou. Mudanças já arquivadas não precisam de
+nada — a cobertura parcial é o estado normal das duas camadas permanentes.
+
+---
+
+## 12. Perguntas frequentes
+
+**Preciso de briefing para tarefa de duas linhas?** Não. O fluxo é para mudança que
+alguém vai revisar. Corrigir um typo não precisa de acordo escrito.
+
+**Onde ficam as regras de stack, framework e padrão de código?** Fora daqui, em
+`copilot-instructions.md` e em `.instructions.md` com `applyTo`. A única etapa que as lê é o
+eixo de padrões do `/sdd-review`, e ele carrega apenas as instructions cujo `applyTo` casa com
+algum arquivo do diff. Regra de Angular carregada para revisar classe Java é contexto pago sem
+retorno.
+
+**O que é uma "capacidade"?** Uma fatia de comportamento com dono claro, não uma pasta do
+código. Teste: as duas coisas seriam descritas na mesma conversa com um analista de
+negócio? Se sim, é a mesma capacidade.
+
+**Duas mudanças abertas na mesma capacidade?** O `/sdd-plan` detecta e declara o conflito
+na proposta. Resolver é decisão humana: sequenciar, mesclar ou cancelar.
+
+**Uma proposta que contradiz uma decisão vigente?** O `/sdd-plan` declara o conflito. Ou a
+proposta respeita a decisão, e ela vira restrição, ou a substitui — e aí sobe para rigor Full
+e escreve `Substitui: DEC-<numero>` no design.
+
+**Por que o review não dá um veredito só?** Porque os dois eixos são independentes, e média
+entre eles deixa o que passou esconder o que falhou. O arquivamento exige os dois; é lá que a
+conjunção acontece.
+
+**Os dois eixos são mesmo independentes num chat só?** Parcialmente. O eixo de padrões roda
+primeiro e não carrega a proposta, o que é o essencial. Mas uma vez que a proposta entra no
+contexto, ela não sai. Para mudança grande ou sensível, rode os dois em chats separados com o
+parâmetro `eixo`.
+
+**Posso usar isso com outra IDE ou outro assistente?** O conteúdo é markdown puro. O que
+é específico do VS Code é o formato dos `.prompt.md` e o carregamento automático de
+skills. O contrato em `SKILL.md` e as referências funcionam colados em qualquer chat.
+
+**O que o validador cobre?** `node .sdd/sdd.mjs validate [change-id]` é um arquivo Node único,
+sem dependência. Ele confere o que é mecânico: metadados ausentes na proposta, seção
+obrigatória vazia, agrupamento sem `Demonstra:` ou sem `Bloqueado por:`, `Demonstra:` que
+descreve camada em vez de comportamento, ciclo ou alvo inexistente no grafo de bloqueio,
+marcador de checklist fora do formato, Verificação que não é o último agrupamento, decisão sem
+`Durabilidade` ou sem `Capacidades`, e alvo de delta ou de `Substitui:` que não existe. Sai
+com código 1 se houver erro.
+
+Ele avisa, sem reprovar, quando um `Demonstra:` parece descrever estado de camada. Julgar o
+corte da fatia é do `/sdd-review`: heurística de texto errando para o lado do bloqueio pararia
+um plano correto.
+
+O `/sdd-plan` e o `/sdd-implement` o rodam ao encerrar, e o `/sdd-review` o roda antes de
+julgar. Regra escrita em markdown custa token toda vez que é carregada; regra escrita em
+código custa zero, sempre — e ainda pega o humano que editou o arquivo à mão.
+
+Julgamento continua no `/sdd-review`: o validador não sabe se um critério é verificável nem se
+uma decisão é durável.
+
+---
+
+## 13. Mapa dos arquivos
+
+| Arquivo                                                          | Papel                                             |
+| ---------------------------------------------------------------- | ------------------------------------------------- |
+| `.github/prompts/sdd-*.prompt.md`                                | os quatro comandos. Invocadores finos             |
+| `.github/skills/sdd-workflow/SKILL.md`                           | contrato do fluxo. Fonte única de verdade         |
+| `.github/skills/sdd-workflow/references/moldes-artefatos.md`     | formato de cada artefato                          |
+| `.github/skills/sdd-workflow/references/specs-e-deltas.md`       | contrato da camada de specs                       |
+| `.github/skills/sdd-workflow/references/decisoes.md`             | contrato da camada de decisões                    |
+| `.github/skills/sdd-workflow/references/eixos-de-revisao.md`     | os dois eixos e o baseline de padrões             |
+| `.sdd/specs/index.md`                                            | índice de capacidades. Mantido pelo archive       |
+| `.sdd/decisoes/index.md`                                         | índice de decisões. Mantido pelo archive          |
+| `.sdd/sdd.mjs`                                                   | validador dos portões mecânicos. Node, sem deps   |
+| `docs/briefings/EXEMPLO-briefing.md`                             | modelo de briefing                                |
+| `docs/guia-contexto-e-modelos.md`                                | modelo, esforço de raciocínio, janela de contexto |
+
+Os prompts são deliberadamente finos. Toda regra de fluxo mora no `SKILL.md`, que é
+carregado uma vez por invocação. Regra duplicada em quatro arquivos é regra que vai divergir
+em quatro arquivos.
+
+As quatro references são carregadas sob demanda, nunca juntas: `decisoes.md` só quando houver
+decisão a marcar, promover ou conferir; `eixos-de-revisao.md` só no review; `specs-e-deltas.md`
+só quando a mudança tocar comportamento registrado.
