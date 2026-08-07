@@ -74,9 +74,14 @@ mecanicamente verificável. "A tela renderiza igual" não é critério, porque n
 contra o quê. "Para a fixture de entrada gravada como linha de base, o resultado é igual,
 campo a campo, ao valor esperado commitado junto" é.
 
-A linha de base é gravada contra o código atual e commitada antes do primeiro commit da
-mudança; sua gravação é o primeiro agrupamento de `tarefas.md`. Linha de base gerada
-depois do refactor grava o resultado, não a referência.
+A linha de base é gravada contra o código atual e commitada **antes** do primeiro commit da
+mudança. Linha de base gerada depois do refactor grava o resultado, não a referência.
+
+Isso a torna pré-requisito do operador, não tarefa do fluxo: nenhuma etapa comita, e a gravação
+precisa estar commitada antes que a implementação comece. O plano a declara como linha
+`Precondição:` no topo de `tarefas.md`, e o `/sdd-implement` confere antes de escolher
+agrupamento. Colocá-la como primeiro agrupamento produziria uma tarefa que a etapa encarregada
+de executá-la não tem como concluir.
 
 O mecanismo da linha de base segue as instructions de teste do projeto, não uma escolha
 livre do plano. Se elas proíbem snapshot automático como única verificação de lógica —
@@ -107,8 +112,12 @@ o revisor compara o plano com a entrada, encontra diferença e reprova algo corr
 
 ## design.md
 
-Obrigatório apenas no rigor Full. Três seções: abordagem técnica em prosa, no máximo uma
-página; decisões; e arquivos afetados, cada caminho marcado como novo, alterado ou removido.
+Obrigatório apenas no rigor Full. Três seções `##`, com estes títulos exatos e nesta ordem:
+`## Abordagem` em prosa, no máximo uma página; `## Decisões`; e `## Arquivos afetados`, cada
+caminho marcado como novo, alterado ou removido.
+
+O título `## Decisões` é literal: é por ele que o validador e o arquivamento localizam o bloco.
+Escrito de outro jeito, os portões de decisão não rodam e a promoção não acontece.
 
 Cada decisão registra quatro coisas: a restrição que a forçou, a escolha adotada, as
 alternativas descartadas com o motivo de cada uma, e a consequência aceita.

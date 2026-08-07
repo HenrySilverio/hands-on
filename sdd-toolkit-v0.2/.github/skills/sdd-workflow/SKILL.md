@@ -11,9 +11,11 @@ Fonte única de verdade do fluxo. Os quatro prompts são invocadores finos deste
 
 Processo e artefatos. Não cobre stack, framework nem padrões de código.
 
-As regras técnicas vivem nas instructions do projeto. O `/sdd-review` é a única etapa que
-**audita** contra elas, e só no eixo de padrões. As outras etapas consultam apenas o que uma
-regra deste contrato citar nominalmente: padrão de nome de branch e padrão de teste.
+As regras técnicas vivem nas instructions do projeto, e as regras **auditáveis** vivem em
+`.sdd/padroes.md` — arquivo escrito para conferir diff, não para gerar código. O `/sdd-review`
+é a única etapa que audita contra as duas, e só no eixo de padrões. As outras etapas consultam
+apenas o que uma regra deste contrato citar nominalmente: padrão de nome de branch e padrão de
+teste.
 
 ## Dependências
 
@@ -38,6 +40,7 @@ Na raiz do repositório:
 | `.sdd/changes/<change-id>/revisao/`            | um arquivo por eixo revisado. Escrito pelo `/sdd-review`                |
 | `.sdd/changes/<change-id>/briefing.md`         | cópia do briefing original, feita no planejamento                       |
 | `.sdd/changes/archive/AAAA-MM-DD-<change-id>/` | mudanças concluídas                                                     |
+| `.sdd/padroes.md`                              | padrões auditáveis. Fonte do eixo 1 da revisão. Opcional                |
 | `.sdd/sdd.mjs`                                 | validador dos portões mecânicos. Opcional                               |
 
 Ausência de `.sdd/changes/` equivale a nenhuma mudança aberta, e não é erro.
@@ -93,10 +96,9 @@ pull request, não mude o estado do repositório fora de `.sdd/`. O que o fluxo 
 a trabalhar no lugar errado: a implementação para se a branch atual não for a declarada, e a
 revisão para se não conseguir determinar o diff contra a base.
 
-Isto é uma regra do contrato, não uma trava técnica: três prompts declaram terminal porque
-precisam rodar teste, lint e `mv`. Se a sua organização quiser a garantia de verdade,
-restrinja a allowlist de comandos do Copilot a leitura de Git, movimentação de arquivo e os
-comandos de build.
+Isto é regra de contrato, não trava técnica: os quatro prompts declaram terminal porque
+precisam rodar teste, lint e `mv`, e terminal inclui `git commit`. Como fechar essa brecha de
+verdade está no README, e é decisão da organização, não deste fluxo.
 
 Commitar é do operador, e o momento é o fechamento de cada fatia. A rastreabilidade que
 interessa numa auditoria — ticket, change-id, branch — está escrita na proposta desde o
@@ -142,6 +144,21 @@ caso a implementação **para e reporta**, como em qualquer divergência, e o op
 Nenhuma outra etapa registra decisão. Se o implement pudesse, a decisão deixaria de ser acordo
 prévio e viraria justificativa do que já foi feito.
 
+### Depois de um REPROVADO
+
+Achado de revisão não tem tarefa pendente esperando por ele: quando o review roda, o normal é
+que todo o checklist esteja `[x]`. O implement não inventa tarefa e não edita o texto de
+`tarefas.md`, então não existe caminho para "corrigir o achado" sem passar pelo plano.
+
+O caminho é **reinvocar `/sdd-plan` no mesmo change-id**, que acrescenta um agrupamento novo
+com o que a revisão apontou e registra o motivo em `## Divergências`. Depois disso o
+`/sdd-implement` volta a ter agrupamento liberado, e o `/sdd-review` roda de novo.
+
+Correção de achado é replanejamento, não improviso. Deixar o implement remendar o checklist
+faria a proposta descrever o que foi feito, que é o defeito que este contrato inteiro existe
+para evitar. A exceção é achado que se resolve sem tocar em artefato nem em código — não
+existe: se nada muda, o achado era falso e o eixo roda de novo sobre o mesmo commit.
+
 ## 5. Formato
 
 Leia `references/moldes-artefatos.md` antes de escrever qualquer artefato.
@@ -157,9 +174,9 @@ alterar comportamento registrado em `specs/`; `references/decisoes.md` quando `d
 existir ou for gerado; `references/eixos-de-revisao.md` apenas no `/sdd-review`. Fora disso,
 não carregue: é contexto pago sem retorno.
 
-Regra de tarefas, que vale em todas as etapas: toda tarefa é item de checklist markdown.
-Pendente usa `- [ ]`, concluída usa `- [x]`, com x minúsculo. Nunca use outro marcador,
-nunca risque texto, nunca remova tarefa concluída. O arquivo é o controle de progresso.
+Regra de tarefas, que vale em todas as etapas: nunca risque texto e nunca remova tarefa
+concluída. O arquivo é o controle de progresso, não o rascunho dele. A sintaxe do item está no
+molde e é conferida pelo validador.
 
 ## 6. Fatia vertical
 

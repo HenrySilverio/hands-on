@@ -107,9 +107,15 @@ function validarTarefas(dir) {
     const b = l.match(/^\s*Bloqueado por\s*:\s*(.*)$/i);
     if (b) atual.bloqueado = b[1].trim();
     if (/^\s*-\s*\[.?\]/.test(l)) atual.itens++;
-    const ruim = l.match(/^\s*-\s*\[(?![ x]\])([^\]]*)\]/);
-    if (ruim) erro(file, `linha ${i + 1}: marcador inválido "[${ruim[1]}]". Use "[ ]" ou "[x]"`);
-    if (/^\s*-\s*\[X\]/.test(l)) erro(file, `linha ${i + 1}: use x minúsculo`);
+    if (/^\s*-\s*\[X\]/.test(l)) {
+      erro(file, `linha ${i + 1}: use x minúsculo em "[X]"`);
+    } else {
+      const ruim = l.match(/^\s*-\s*\[(?![ x]\])([^\]]*)\]/);
+      if (ruim) erro(file, `linha ${i + 1}: marcador inválido "[${ruim[1]}]". Use "[ ]" ou "[x]"`);
+    }
+    if (/^\s*-\s*\[[ xX]\]/.test(l) && !/^\s*-\s*\[[ xX]\]\s+\d+(\.\d+)*\s+\S/.test(l)) {
+      erro(file, `linha ${i + 1}: item sem número. Formato: "- [ ] 1.2 descrição"`);
+    }
   });
 
   if (grupos.length === 0) return erro(file, 'nenhum agrupamento no formato "### N. Título"');
@@ -241,7 +247,11 @@ function validarDesign(dir) {
   });
 
   if (decisoes.length === 0) {
-    return aviso(file, 'design.md sem nenhuma decisão em "## Decisões" no formato "### Título"');
+    return erro(
+      file,
+      'design.md sem nenhuma decisão sob o título literal "## Decisões", cada uma em "### Título". ' +
+        'Sem esse formato os portões de decisão não rodam e a promoção não acontece'
+    );
   }
 
   const idx = read(join(DECISOES, 'index.md')) || '';
@@ -278,38 +288,57 @@ function validarDeltas(dir) {
   if (entradas.length === 0) return erro(file, 'deltas.md existe mas não tem nenhuma entrada com Operação');
 
   const alvos = [...txt.matchAll(/^\s*[-|]?\s*Alvo\s*[:|]\s*(\S+)/gim)].map((m) => m[1]);
+  const caps = [...txt.matchAll(/^\s*[-|]?\s*Capacidade\s*[:|]\s*(\S+)/gim)].map((m) => m[1]);
   const ops = entradas.map((m) => m[1].toUpperCase());
 
-  if (ops.length !== alvos.length) {
-    erro(file, `${ops.length} operações para ${alvos.length} alvos. Cada entrada precisa de Operação e Alvo`);
+  if (ops.length !== alvos.length || ops.length !== caps.length) {
+    erro(
+      file,
+      `${ops.length} Operação, ${caps.length} Capacidade, ${alvos.length} Alvo. ` +
+        'Cada entrada precisa dos três — o arquivamento usa Capacidade para escolher qual spec.md abrir'
+    );
     return;
   }
 
-  const reqExistentes = new Set();
+  // REQ por capacidade, não em conjunto: alvo válido na capacidade errada é delta escrito
+  // contra outro arquivo, e o archive aplicaria no lugar errado sem julgar.
+  const reqPorCap = new Map();
   if (existsSync(SPECS)) {
     for (const cap of readdirSync(SPECS)) {
-      const p = join(SPECS, cap, 'spec.md');
-      const t = read(p);
-      if (t) for (const m of t.matchAll(/\bREQ-[\w-]+-\d{3}\b/g)) reqExistentes.add(m[0]);
+      const t = read(join(SPECS, cap, 'spec.md'));
+      const s = new Set();
+      if (t) for (const m of t.matchAll(/\bREQ-[\w-]+-\d{3}\b/g)) s.add(m[0]);
+      reqPorCap.set(cap, s);
     }
   }
 
   ops.forEach((op, i) => {
     const alvo = alvos[i];
+    const cap = caps[i];
     if (!['ADICIONAR', 'SUBSTITUIR', 'REMOVER'].includes(op)) {
       erro(file, `operação inválida: ${op}`);
       return;
     }
     if (op === 'ADICIONAR') {
       if (!/^novo$/i.test(alvo)) erro(file, `ADICIONAR deve ter Alvo "novo", e tem "${alvo}"`);
-      return;
+      return; // capacidade nova é legítima: o archive a cria
     }
     if (!/^REQ-/.test(alvo)) {
       erro(file, `${op} precisa apontar para um REQ-..., e aponta para "${alvo}"`);
       return;
     }
-    if (!reqExistentes.has(alvo)) {
-      erro(file, `${op} aponta para ${alvo}, que não existe em ${SPECS}. Delta escrito contra estado que já mudou`);
+    if (!reqPorCap.has(cap)) {
+      erro(file, `${op} ${alvo}: capacidade "${cap}" não existe em ${SPECS}. Só ADICIONAR cria capacidade`);
+      return;
+    }
+    if (!reqPorCap.get(cap).has(alvo)) {
+      const outra = [...reqPorCap].find(([, s]) => s.has(alvo));
+      erro(
+        file,
+        outra
+          ? `${op} aponta para ${alvo} sob a capacidade "${cap}", mas ele vive em "${outra[0]}"`
+          : `${op} aponta para ${alvo}, que não existe em ${SPECS}. Delta escrito contra estado que já mudou`
+      );
     }
   });
 

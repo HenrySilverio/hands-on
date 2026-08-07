@@ -29,13 +29,19 @@ Confira, e pare no primeiro que falhar:
 1. Existe em `.sdd/changes/<change-id>/revisao/`, para **cada um dos dois eixos**, um arquivo
    com veredito APROVADO cujo `Commit revisado` é o HEAD atual da branch declarada. Um eixo
    aprovado e outro reprovado não arquiva, e a ordem em que foram corrigidos não importa.
-2. A árvore de trabalho está limpa. Alteração não commitada não foi revisada por ninguém.
+2. A árvore de trabalho está limpa, **exceto por `.sdd/changes/<change-id>/revisao/`**.
+   Alteração não commitada em código não foi revisada por ninguém. A exceção existe porque o
+   veredito é escrito depois do commit que ele aprova: exigir a pasta commitada faria o HEAD
+   avançar e invalidaria a precondição 1, e o fluxo nunca fecharia.
 3. Todas as tarefas estão marcadas `[x]`.
 4. `proposta.md` existe e declara os três metadados.
 
 Se houver aprovação de um eixo, mas apontando para um commit anterior, o HEAD avançou depois
 da revisão: a mudança foi alterada e não está revisada. Diga qual eixo precisa rodar de novo e
 pare.
+
+Se algum eixo estiver REPROVADO, o caminho não é o `/sdd-implement`: é reinvocar o `/sdd-plan`
+no mesmo change-id para transformar o achado em agrupamento novo. Ver a seção 4 do SKILL.md.
 
 Sem a pasta `revisao/`, não há aprovação — a palavra do operador não é precondição. Diga que o
 `/sdd-review` ainda não rodou nesta mudança e pare.

@@ -53,9 +53,16 @@ o resto é entrada de outra etapa e só ocuparia contexto.
 Execute **um** agrupamento por invocação, inclusive quando ele for o de Verificação. Escolha o
 de menor número entre os pendentes cujos `Bloqueado por:` já estão inteiramente concluídos.
 
-Se nenhum agrupamento estiver liberado, pare e diga o que falta fechar. Se o agrupamento
-escolhido não couber nesta sessão, pare e reporte: fatia grossa é defeito de planejamento, e
-quebrá-la aqui altera o plano em silêncio.
+Se `tarefas.md` declarar `Precondição:` no topo, confira que ela está satisfeita antes de
+escolher qualquer agrupamento. O caso comum é linha de base de refactor, que precisa estar
+commitada contra o código antigo — e commitar não é desta etapa.
+
+Se nenhum agrupamento estiver liberado, pare e diga o que falta fechar. Se todos estiverem
+`[x]`, a mudança está pronta para o `/sdd-review`; se ela já foi reprovada, o caminho é
+reinvocar o `/sdd-plan`, não improvisar aqui.
+
+Se o agrupamento escolhido não couber nesta sessão, pare e reporte: fatia grossa é defeito de
+planejamento, e quebrá-la aqui altera o plano em silêncio.
 
 Um agrupamento fechado é uma fatia vertical demonstrável. É o ponto natural de commit, e é
 por isso que ele é a unidade desta etapa.

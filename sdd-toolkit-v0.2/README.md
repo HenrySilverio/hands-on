@@ -1,7 +1,7 @@
 # SDD para GitHub Copilot Chat
 
 Fluxo guiado por especificação para VS Code, em markdown puro. Sem CLI, sem instalação
-global, sem dependência de npm. Você copia duas pastas para o seu repositório e o fluxo
+global, sem dependência de npm. Você copia quatro pastas para o seu repositório e o fluxo
 existe.
 
 O objetivo é duplo e os dois lados são inegociáveis: **código pronto para produção** e
@@ -157,7 +157,9 @@ Entrada: change-id, e opcionalmente qual eixo rodar.
 Audita em **dois eixos independentes** e emite **dois vereditos**.
 
 O eixo de padrões roda primeiro e não lê a proposta: ele vê o diff e as regras declaradas do
-repositório, e nada mais. O eixo de especificação roda depois, com a proposta, e confere
+repositório, e nada mais. Ele carrega `.sdd/padroes.md` primeiro, depois as instructions que
+o `applyTo` fizer casar com os arquivos do diff, e só cai no baseline se não houver nada
+escrito. O eixo de especificação roda depois, com a proposta, e confere
 critério contra código e teste, tarefa marcada contra evidência, o que cada agrupamento
 demonstra, a conferência bidirecional dos deltas, e a marcação das decisões.
 
@@ -165,9 +167,15 @@ APROVADO ou REPROVADO em cada eixo. Não existe "aprovado com ressalvas" — iss
 com educação. Não existe veredito consolidado: o arquivamento exige os dois.
 
 Os vereditos são gravados em `.sdd/changes/<id>/revisao/<eixo>-<commit>.md`, um arquivo por
-execução, nunca editados. É a única escrita que a revisão faz — ela não declara ferramenta de
-edição, então não tem como tocar no código que audita. Existe porque veredito que só aparece
-no chat é inverificável pela etapa seguinte: o archive teria que acreditar em quem o invocou.
+execução, nunca editados. É a única escrita que a revisão faz — ela declara criação de arquivo
+e não declara edição, então não consegue alterar arquivo existente: nem o código que audita,
+nem um veredito já gravado. Existe porque veredito que só aparece no chat é inverificável pela
+etapa seguinte: o archive teria que acreditar em quem o invocou.
+
+**Reprovou?** O caminho não é o `/sdd-implement` — quando a revisão roda, o checklist já está
+todo `[x]` e não há agrupamento liberado. Reinvoque o `/sdd-plan` no mesmo change-id: o achado
+vira agrupamento novo e o motivo entra em `## Divergências`. Correção de achado é
+replanejamento, não improviso.
 
 ### `/sdd-archive`
 
@@ -265,7 +273,7 @@ O que ele faz é se recusar a trabalhar no lugar errado:
 | `/sdd-plan`      | determina base e branch de trabalho, e grava as duas na proposta |
 | `/sdd-implement` | confere que a branch atual é a declarada, e para se não for     |
 | `/sdd-review`    | obtém o diff entre branch e base. Sem diff, não revisa          |
-| `/sdd-archive`   | nada                                                            |
+| `/sdd-archive`   | confere o HEAD da branch e a árvore de trabalho. Não escreve    |
 
 O nome da branch segue o padrão das instructions do projeto. Sem padrão declarado, usa o
 change-id.
@@ -278,9 +286,15 @@ escopo de escrita que sustenta o resto do fluxo, e a rastreabilidade que interes
 auditoria — ticket, change-id, branch — já está escrita na proposta desde o planejamento.
 
 Seja honesto sobre a natureza dessa garantia: ela é **uma regra do contrato, não uma trava
-técnica**. Três prompts declaram terminal porque precisam rodar teste, lint e mover pasta, e
-terminal inclui `git commit`. Se você quiser a garantia de verdade, restrinja a allowlist de
-comandos do Copilot na sua organização a leitura de Git, `mv` e os comandos de build.
+técnica**. Os quatro prompts declaram terminal porque precisam rodar teste, lint, o validador
+e mover pasta, e terminal inclui `git commit`. Se você quiser a garantia de verdade, restrinja
+a allowlist de comandos do Copilot na sua organização a leitura de Git, `mv`, `node` e os
+comandos de build.
+
+O `revisao/` é a única coisa que fica fora do commit quando o arquivamento roda, e é de
+propósito: o veredito é escrito **depois** do commit que ele aprova, então exigir a pasta
+commitada faria o HEAD avançar e invalidaria a própria aprovação. O `/sdd-archive` ignora essa
+pasta ao conferir a árvore, e nada mais.
 
 Implementar na branch errada empilha uma mudança em cima de outra, e a revisão julga isso como
 escopo expandido e reprova, corretamente. Parar no Passo 1 é mais barato.
@@ -382,6 +396,7 @@ registro sem critério e sem revisão. As camadas crescem pelo fluxo ou não cre
 | ------- | ------ |
 | Camada `.sdd/decisoes/`, alimentada pelo archive | o rationale morria no archive e a alternativa descartada voltava como proposta |
 | `/sdd-review` com dois eixos e dois vereditos | o eixo spec sozinho aprovava código que violava todo padrão do repositório |
+| `.sdd/padroes.md`, fonte declarada do eixo 1 | `copilot-instructions.md` é escrito para gerar código e cobrado em toda requisição do repo; regra de auditoria precisa ser verificável contra diff e só custar na revisão |
 | Fatia vertical obrigatória em `tarefas.md` | não havia unidade de trabalho honesta, e agrupamento por camada escondia dependência |
 | `Ticket`, `Branch` e `Base` na proposta, conferidos | implementar na branch errada era invisível até a revisão |
 | Roteamento de modelo corrigido | o implement rodava em Opus e o review em Sonnet, o inverso do que a doutrina manda |
@@ -389,7 +404,8 @@ registro sem critério e sem revisão. As camadas crescem pelo fluxo ou não cre
 | `.sdd/sdd.mjs`, o validador | os quatro itens acima criaram portões sintáticos, e o próprio README manda escrever regra sintática em código |
 
 Nenhuma mudança altera o formato do briefing, então o `sdd-discovery` e qualquer briefing já
-escrito continuam válidos.
+escrito continuam válidos. O outro ponto de acoplamento com ele, o mapa do `/discovery-rota`,
+**mudou**: a rota depois de um REPROVADO passa pelo `/sdd-plan`, não pelo `/sdd-implement`.
 
 **O que isso custou.** O contexto carregado por invocação subiu em todas as quatro etapas:
 
@@ -411,11 +427,24 @@ O validador puxa na direção oposta e vai continuar puxando: cada portão que e
 markdown. Esta versão já move os sintáticos para lá; a próxima deveria mover o resto que for
 mecanizável.
 
-Migração de um repositório que já usa a 0.1: copie `.sdd/sdd.mjs`, crie
-`.sdd/decisoes/index.md`, acrescente os três metadados no topo das propostas abertas, e
-acrescente `Demonstra:` e `Bloqueado por:` nos agrupamentos de `tarefas.md`. Rode
-`node .sdd/sdd.mjs validate` para achar o que faltou. Mudanças já arquivadas não precisam de
-nada — a cobertura parcial é o estado normal das duas camadas permanentes.
+Migração de um repositório que já usa a 0.1, nesta ordem:
+
+1. **Substitua `.github/prompts/` e `.github/skills/sdd-workflow/` inteiros.** Este passo não é
+   opcional e vem primeiro: o validador exige `Ticket`, `Branch` e `Base`, que o `/sdd-plan` da
+   0.1 nunca escreve, e o `/sdd-archive` da 0.1 arquiva sem conferir `revisao/`.
+2. Copie `.sdd/sdd.mjs` e `.sdd/padroes.md`, e crie `.sdd/decisoes/index.md`.
+3. Nas mudanças **abertas**, acrescente os três metadados no topo da proposta e
+   `Demonstra:` e `Bloqueado por:` nos agrupamentos de `tarefas.md`.
+4. Rode `node .sdd/sdd.mjs validate` e corrija o que ele apontar.
+
+Mudança aberta que já passou pelo review da 0.1 não tem `revisao/` e não vai arquivar: rode o
+`/sdd-review` novo, que é barato comparado a fabricar o arquivo à mão.
+
+Mudanças já arquivadas não precisam de nada — a cobertura parcial é o estado normal das duas
+camadas permanentes.
+
+Se você usa o `sdd-discovery`, atualize também o mapa do `/discovery-rota`: a rota "review
+reprovou → `/sdd-implement`" virou "review reprovou → `/sdd-plan` no mesmo change-id".
 
 ---
 
@@ -424,11 +453,15 @@ nada — a cobertura parcial é o estado normal das duas camadas permanentes.
 **Preciso de briefing para tarefa de duas linhas?** Não. O fluxo é para mudança que
 alguém vai revisar. Corrigir um typo não precisa de acordo escrito.
 
-**Onde ficam as regras de stack, framework e padrão de código?** Fora daqui, em
-`copilot-instructions.md` e em `.instructions.md` com `applyTo`. A única etapa que as lê é o
-eixo de padrões do `/sdd-review`, e ele carrega apenas as instructions cujo `applyTo` casa com
-algum arquivo do diff. Regra de Angular carregada para revisar classe Java é contexto pago sem
-retorno.
+**Onde ficam as regras de stack, framework e padrão de código?** Fora do contrato do fluxo:
+regra de geração em `copilot-instructions.md` e em `.instructions.md` com `applyTo`, regra de
+auditoria em `.sdd/padroes.md`. A única etapa que as **audita** é o eixo de padrões do
+`/sdd-review`, e ele carrega apenas as instructions cujo `applyTo` casa com algum arquivo do
+diff — regra de Angular carregada para revisar classe Java é contexto pago sem retorno.
+
+Duas outras etapas consultam instructions, mas nominalmente e por uma regra do contrato, não
+por conta própria: o `/sdd-plan` pega o padrão de nome de branch, e o molde de refactor puro
+segue o padrão de teste do projeto ao desenhar a linha de base.
 
 **O que é uma "capacidade"?** Uma fatia de comportamento com dono claro, não uma pasta do
 código. Teste: as duas coisas seriam descritas na mesma conversa com um analista de
@@ -466,8 +499,9 @@ Ele avisa, sem reprovar, quando um `Demonstra:` parece descrever estado de camad
 corte da fatia é do `/sdd-review`: heurística de texto errando para o lado do bloqueio pararia
 um plano correto.
 
-O `/sdd-plan` e o `/sdd-implement` o rodam ao encerrar, e o `/sdd-review` o roda antes de
-julgar. Regra escrita em markdown custa token toda vez que é carregada; regra escrita em
+O `/sdd-plan` e o `/sdd-implement` o rodam ao encerrar; o `/sdd-review` o roda no Passo 2.0,
+antes de julgar qualquer coisa, porque os Passos 2.3 e 2.4 dependem dos portões sintáticos já
+estarem respondidos. Regra escrita em markdown custa token toda vez que é carregada; regra escrita em
 código custa zero, sempre — e ainda pega o humano que editou o arquivo à mão.
 
 Julgamento continua no `/sdd-review`: o validador não sabe se um critério é verificável nem se
@@ -487,6 +521,7 @@ uma decisão é durável.
 | `.github/skills/sdd-workflow/references/eixos-de-revisao.md`     | os dois eixos e o baseline de padrões             |
 | `.sdd/specs/index.md`                                            | índice de capacidades. Mantido pelo archive       |
 | `.sdd/decisoes/index.md`                                         | índice de decisões. Mantido pelo archive          |
+| `.sdd/padroes.md`                                                | padrões auditáveis. Fonte do eixo 1. Opcional     |
 | `.sdd/sdd.mjs`                                                   | validador dos portões mecânicos. Node, sem deps   |
 | `docs/briefings/EXEMPLO-briefing.md`                             | modelo de briefing                                |
 | `docs/guia-contexto-e-modelos.md`                                | modelo, esforço de raciocínio, janela de contexto |

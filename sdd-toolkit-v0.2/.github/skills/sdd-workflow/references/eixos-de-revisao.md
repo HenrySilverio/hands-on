@@ -30,16 +30,21 @@ os dois eixos em dois chats, cada um com o seu escopo. O comando funciona nos do
 
 Nesta ordem, e só o que existir:
 
-1. `.github/copilot-instructions.md`, se existir.
-2. `.github/instructions/*.instructions.md` cujo `applyTo` case com algum arquivo alterado no
+1. `.sdd/padroes.md`, a fonte declarada do eixo. É o único arquivo escrito para **auditar**;
+   os demais são escritos para gerar código e servem aqui por reaproveitamento.
+2. `.github/copilot-instructions.md`, se existir.
+3. `.github/instructions/*.instructions.md` cujo `applyTo` case com algum arquivo alterado no
    diff. **Não carregue os que não casam.** O campo `applyTo` existe exatamente para isso, e
    carregar regra de Angular para revisar uma classe Java é contexto pago sem retorno.
-3. Qualquer arquivo de padrão que o repositório declare em documentação, se apontado na
-   invocação.
+4. Qualquer outro arquivo de padrão apontado na invocação.
 
 Se nada disso existir, use o baseline abaixo e declare que o repositório não tem padrão
 escrito. Isso é achado por si só, de gravidade baixa, e é a informação mais acionável que uma
 primeira revisão pode produzir.
+
+`.sdd/padroes.md` marca com `[grave]` a regra cuja violação isolada já reprova. Regra sem
+marcação reprova quando há mais de um achado do mesmo assunto no mesmo diff. Regra vinda das
+instructions não tem marcação e segue a condição geral da seção "Vereditos".
 
 ### Baseline
 
@@ -82,12 +87,20 @@ Critério coberto por código sem teste é parcial, não coberto.
 Dois, independentes, cada um APROVADO ou REPROVADO. Não há veredito parcial em nenhum dos dois
 — "aprovado com ressalvas" é reprovado com educação.
 
-Reprove o eixo de padrões se houver violação de regra declarada nas instructions do projeto.
-Achado de baseline em repositório sem padrão escrito é registrado, não reprova: reprovar por
-uma regra que ninguém escreveu é impor padrão pela revisão, e padrão imposto na revisão é
-padrão que o time não acordou.
+Reprove o eixo de padrões se houver violação de regra declarada em `.sdd/padroes.md` ou nas
+instructions do projeto, pelas condições de gravidade acima. Achado de baseline em repositório
+sem padrão escrito é registrado, não reprova: reprovar por uma regra que ninguém escreveu é
+impor padrão pela revisão, e padrão imposto na revisão é padrão que o time não acordou.
 
-Reprove o eixo de especificação pelas condições do Passo 2.6 do prompt.
+Reprove o eixo de especificação se houver qualquer um destes:
+
+- critério de aceite não coberto, ou coberto por código sem teste;
+- tarefa marcada `[x]` sem evidência de arquivo alterado ou comando executado;
+- agrupamento fechado que não demonstra o comportamento da própria linha `Demonstra:`;
+- erro do validador, ou falha de lint, tipo ou teste;
+- escopo implementado além da proposta;
+- restrição da proposta violada;
+- achado na conferência dos deltas ou na conferência das decisões.
 
 O `/sdd-archive` exige os dois APROVADO. Um eixo aprovado não compensa o outro, e a ordem em
 que foram corrigidos não importa.
@@ -118,8 +131,10 @@ não haja colisão nem ambiguidade sobre qual é o mais recente. Reprovado segui
 o histórico normal de uma mudança, e apagá-lo apaga a informação de que houve retrabalho.
 
 Esta é a **única** escrita que o `/sdd-review` faz, e ela é sempre um arquivo novo. O prompt
-não declara ferramenta de edição: o revisor não tem como tocar no código que audita, e essa
-garantia é de ferramenta, não de prosa.
+declara criação de arquivo e **não** declara edição: o revisor não consegue alterar arquivo
+existente, o que cobre tanto o código que ele audita quanto um veredito já gravado. Criar
+arquivo novo fora de `revisao/` ele ainda conseguiria, e fechar isso é allowlist da
+organização.
 
 O arquivamento confere que existe, para cada eixo, um arquivo APROVADO cujo commit é o HEAD
 atual da branch. É isso que impede o caso mais comum de fraude involuntária: aprovar,

@@ -13,8 +13,10 @@ Dois eixos, dois vereditos. Código pode cumprir a proposta inteira e violar tod
 repositório, ou o contrário. Veredito único deixa o eixo que passou esconder o que falhou.
 
 A única escrita permitida é criar arquivo novo em `.sdd/changes/<change-id>/revisao/`. Este
-prompt não declara ferramenta de edição, de propósito: o revisor não tem como tocar no código
-que audita.
+prompt declara apenas criação de arquivo, nunca edição: o revisor não consegue alterar arquivo
+que já existe, e portanto não consegue mexer no código que audita nem reescrever um veredito
+anterior. Criar arquivo novo em outro caminho ele ainda conseguiria — fechar isso é allowlist
+da organização, não prosa deste arquivo.
 
 ## Entradas
 
@@ -29,6 +31,9 @@ Leia `.github/skills/sdd-workflow/SKILL.md` e
 formato do registro de veredito estão lá; este prompt não os repete.
 
 Se a mudança vier vazia ou inexistente, liste as opções e pare.
+
+Se `eixo` vier preenchido, execute **somente** aquele eixo e grave somente o veredito dele. Se
+vier vazio, execute os dois, nesta ordem.
 
 Leia `Branch` e `Base` no topo de `proposta.md`. **Leia apenas os metadados neste passo; não
 leia o corpo da proposta ainda** — a independência do eixo 1 depende disso.
@@ -58,20 +63,27 @@ Feche com o veredito de padrões, pelas condições da referência.
 
 # EIXO 2 - Especificação
 
-Só depois de fechar o veredito de padrões. Não revisite os achados do eixo 1.
+Quando os dois eixos rodam na mesma sessão, este só começa depois de fechado o veredito de
+padrões, e não revisita os achados dele. Numa sessão `eixo=spec`, comece direto aqui.
 
-## Passo 2.0 - Artefatos
+## Passo 2.0 - Artefatos e validador
 
 Leia `proposta.md` e `tarefas.md`.
 
-Se `deltas.md` existir, leia também `.sdd/specs/index.md` e o `spec.md` de cada capacidade
-citada nos deltas.
+Se `deltas.md` existir, leia `deltas.md`, `.github/skills/sdd-workflow/references/specs-e-deltas.md`,
+`.sdd/specs/index.md` e o `spec.md` de cada capacidade citada nos deltas.
 
-Se `design.md` existir, leia `.github/skills/sdd-workflow/references/decisoes.md`,
-`.sdd/decisoes/index.md`, e o `DEC-...` de cada decisão vigente cujo assunto o design toca —
-sem o corpo do registro não há como detectar contradição.
+Se `design.md` existir, leia `design.md`,
+`.github/skills/sdd-workflow/references/decisoes.md`, `.sdd/decisoes/index.md`, e o `DEC-...`
+de cada decisão vigente cujo assunto o design toca — sem o corpo do registro não há como
+detectar contradição.
 
 Não leia `briefing.md`. O acordo auditável é a proposta.
+
+Rode `node .sdd/sdd.mjs validate <change-id>`, se o arquivo existir, **antes** de julgar
+qualquer coisa. Os portões sintáticos precisam estar respondidos antes dos Passos 2.3 e 2.4,
+que dependem deles para não gastar raciocínio em conferência mecânica. Não conserte falha;
+registre e siga.
 
 ## Passo 2.1 - Critérios contra código
 
@@ -120,19 +132,12 @@ gaste raciocínio neles, rode o validador.
 
 ## Passo 2.5 - Verificação
 
-Rode `node .sdd/sdd.mjs validate <change-id>`, se o arquivo existir. Depois rode lint,
-checagem de tipos e testes, se os comandos estiverem declarados no agrupamento de verificação.
-Não conserte falha; reporte.
+Rode lint, checagem de tipos e testes, se os comandos estiverem declarados no agrupamento de
+verificação. Não conserte falha; reporte.
 
 ## Passo 2.6 - Veredito de especificação
 
-APROVADO ou REPROVADO. Não há veredito parcial: "aprovado com ressalvas" é reprovado com
-educação.
-
-Reprove se: houver critério não coberto; houver tarefa marcada sem evidência; um agrupamento
-fechado não demonstrar o que declarou; o validador ou a verificação falhar; a implementação
-tiver ampliado o escopo além da proposta; alguma restrição da proposta tiver sido violada; ou
-houver qualquer achado dos Passos 2.3 e 2.4.
+Feche pelas condições da seção "Vereditos" da referência.
 
 ---
 

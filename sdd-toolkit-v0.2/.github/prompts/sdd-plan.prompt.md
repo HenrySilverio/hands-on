@@ -28,10 +28,17 @@ Se `Replanejar` vier preenchido, você está atualizando uma mudança existente,
 outra. Se o change-id informado não existir, pare e liste as mudanças abertas — não crie pasta
 nova com nome parecido.
 
-Replanejar é legítimo e tem um caso principal: a implementação parou reportando uma decisão
-durável que o plano não previu, e o rigor precisa subir de Lite para Full. Ao replanejar,
-preserve as tarefas já marcadas `[x]`, não renumere agrupamento existente, e registre o motivo
-em `## Divergências`. Replanejamento silencioso é indistinguível de descuido.
+Replanejar é legítimo e tem dois casos:
+
+1. **Achado de revisão.** Um eixo do `/sdd-review` reprovou. Acrescente um agrupamento novo
+   com o que corrige o achado, citando o arquivo de `revisao/` que o originou. Este é o único
+   caminho: quando a revisão roda, o checklist já está todo `[x]`, e o `/sdd-implement` não
+   inventa tarefa nem edita o texto de `tarefas.md`.
+2. **Decisão durável não prevista.** A implementação parou reportando uma decisão que o plano
+   não previu, e o rigor precisa subir de Lite para Full.
+
+Nos dois, preserve as tarefas já marcadas `[x]`, não renumere agrupamento existente, e
+registre o motivo em `## Divergências`. Replanejamento silencioso é indistinguível de descuido.
 
 Se `Replanejar` vier vazio e já existir mudança aberta para este briefing, pare e pergunte se
 é para replanejar aquela. Duas pastas para o mesmo briefing é o começo de duas mudanças

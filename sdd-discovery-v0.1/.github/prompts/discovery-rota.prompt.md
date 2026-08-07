@@ -64,8 +64,9 @@ oito mil tokens e carregar sessenta mil.
 | ----------------------------------------------------- | ------------------------------------------------------------------------ |
 | o `/sdd-plan` devolveu perguntas e não escreveu nada  | `/discovery-grill` só sobre essas perguntas, atualize o briefing, rode o `/sdd-plan` de novo |
 | o briefing tem `[NÃO RESPONDIDO]` e você quer avançar | não avance. É a mesma rota acima                                          |
-| o `/sdd-review` reprovou                              | `/sdd-implement` no mesmo change-id. Não replaneje                        |
+| o `/sdd-review` reprovou                              | `/sdd-plan` no mesmo change-id: o achado vira agrupamento novo e o motivo entra em `## Divergências`. Depois `/sdd-implement`, depois `/sdd-review` de novo |
 | o `/sdd-review` reprovou por critério errado, não por código errado | pare. Decisão humana: corrigir a proposta e reabrir, ou aceitar o escopo como está |
+| um eixo aprovou e o outro reprovou                    | corrija só o eixo reprovado e rode `/sdd-review` com `eixo` preenchido. O archive exige os dois |
 | o `/sdd-implement` parou reportando divergência       | pare. Decisão humana, não há comando                                      |
 | a mudança é grande demais para uma sessão             | quebre em briefings menores, um por capacidade, cada um entregando valor sozinho. Não existe comando para isso hoje |
 | o protótipo respondeu a pergunta                      | volte ao `/discovery-grill` ou edite o briefing à mão, registrando a decisão em `Contexto útil` |
