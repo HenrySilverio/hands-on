@@ -1,0 +1,21 @@
+name: valida-base
+on:
+  pull_request:
+  push: { branches: [main] }
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Validar frontmatter e regras estruturais
+        run: node ferramentas/valida-frontmatter.mjs
+      - name: Conferir se o INDEX está atualizado
+        run: |
+          node ferramentas/gera-index.mjs
+          git diff --exit-code INDEX.md || {
+            echo "::error::INDEX.md desatualizado. Rode: node ferramentas/gera-index.mjs"
+            exit 1
+          }

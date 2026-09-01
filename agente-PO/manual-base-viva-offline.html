@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Manual de operacao da base viva: extracao, publicacao a partir de PROD, decisoes, historico, curadoria, agentes e RAG.">
+<title>Manual de Operação da Base Viva</title>
+<style>
+:root{
+  --paper:#F6F4F0;--surface:#FFFFFF;--surface-2:#EFEBE4;
+  --ink:#1A1C1B;--ink-2:#545956;--ink-3:#7C817E;
+  --rule:#DCD7CD;--rule-strong:#BFB8AA;
+  --dev:#1E5A6E;--dev-soft:#E1EBEF;
+  --neg:#8A6410;--neg-soft:#F2E9D3;
+  --risk:#9E3B2C;--risk-soft:#F6E3DF;
+  --ok:#3B6B48;--ok-soft:#E4EFE6;
+  --shadow:0 1px 2px rgba(26,28,27,.05),0 8px 24px -12px rgba(26,28,27,.18);
+  --f-display:"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-body:Cambria,Georgia,"Times New Roman",serif;
+  --f-mono:"Cascadia Mono",Consolas,ui-monospace,"Courier New",monospace;
+  --measure:68ch;--pad:clamp(1.15rem,4vw,2.5rem);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#131719;--surface:#1A1F22;--surface-2:#20262A;
+    --ink:#EAE7E1;--ink-2:#A6ACAA;--ink-3:#7E8785;
+    --rule:#2C3439;--rule-strong:#3E484E;
+    --dev:#79BAD1;--dev-soft:#16323D;
+    --neg:#D8AE55;--neg-soft:#332A11;
+    --risk:#E08373;--risk-soft:#3A211C;
+    --ok:#82BF92;--ok-soft:#182B1D;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#131719;--surface:#1A1F22;--surface-2:#20262A;
+  --ink:#EAE7E1;--ink-2:#A6ACAA;--ink-3:#7E8785;
+  --rule:#2C3439;--rule-strong:#3E484E;
+  --dev:#79BAD1;--dev-soft:#16323D;
+  --neg:#D8AE55;--neg-soft:#332A11;
+  --risk:#E08373;--risk-soft:#3A211C;
+  --ok:#82BF92;--ok-soft:#182B1D;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);
+  font-size:clamp(1rem,.97rem + .18vw,1.06rem);line-height:1.62;-webkit-font-smoothing:antialiased}
+.wrap{max-width:calc(var(--measure) + 15rem);margin:0 auto;padding:0 var(--pad) 6rem}
+.col{max-width:var(--measure)}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:600;line-height:1.13;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.05rem,1.45rem + 3vw,3.5rem);letter-spacing:-.022em;font-weight:700}
+h2{font-size:clamp(1.42rem,1.2rem + 1.1vw,1.95rem);letter-spacing:-.016em}
+h3{font-size:clamp(1.06rem,1rem + .38vw,1.24rem);letter-spacing:-.008em;margin-top:.4rem}
+h4{font-size:.96rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.7rem;font-weight:500;text-transform:uppercase;
+  letter-spacing:.14em;color:var(--ink-3)}
+code{font-family:var(--f-mono);font-size:.83em;background:var(--surface-2);border:1px solid var(--rule);
+  padding:.08em .34em;border-radius:3px;white-space:nowrap}
+strong{font-weight:600}
+
+header.hero{border-bottom:1px solid var(--rule);padding:clamp(2.8rem,7vw,4.8rem) 0 clamp(1.8rem,4vw,2.6rem)}
+.hero .col{display:flex;flex-direction:column;gap:1.05rem}
+.lede{font-size:clamp(1.06rem,1rem + .38vw,1.22rem);color:var(--ink-2);line-height:1.55}
+
+section{padding:clamp(2.4rem,5.5vw,3.8rem) 0;border-bottom:1px solid var(--rule)}
+section:last-of-type{border-bottom:0}
+.sec-head{display:flex;flex-direction:column;gap:.55rem;margin-bottom:1.5rem}
+.stack{display:flex;flex-direction:column;gap:1rem}
+
+.say{border-left:3px solid var(--ok);background:var(--ok-soft);padding:.85rem 1.1rem;
+  border-radius:0 4px 4px 0}
+.say .eyebrow{color:var(--ok);display:block;margin-bottom:.25rem}
+.say p{font-size:1.01rem}
+.pull{border-left:3px solid var(--neg);background:var(--neg-soft);padding:1rem 1.2rem;border-radius:0 4px 4px 0}
+.pull .eyebrow{color:var(--neg);display:block;margin-bottom:.3rem}
+.warn{border-left:3px solid var(--risk);background:var(--risk-soft);padding:1rem 1.2rem;border-radius:0 4px 4px 0}
+.warn .eyebrow{color:var(--risk);display:block;margin-bottom:.3rem}
+.note{border:1px solid var(--rule);background:var(--surface);padding:.95rem 1.15rem;border-radius:4px;box-shadow:var(--shadow)}
+.note h4{margin-bottom:.35rem}
+.note p{font-size:.93rem;color:var(--ink-2)}
+
+ul.clean{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem}
+ul.clean li{padding-left:1.15rem;position:relative;color:var(--ink-2);font-size:.96rem;line-height:1.55}
+ul.clean li::before{content:"";position:absolute;left:0;top:.62em;width:.42rem;height:.42rem;
+  background:var(--rule-strong);border-radius:50%}
+ul.clean li b,ul.clean li strong{color:var(--ink)}
+ol.steps{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.85rem}
+ol.steps li{color:var(--ink-2);font-size:.97rem;line-height:1.55}
+ol.steps li b{color:var(--ink)}
+ol.steps::marker{font-family:var(--f-mono)}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:.87rem}
+th,td{text-align:left;padding:.68rem .85rem;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.5}
+thead th{font-family:var(--f-mono);font-size:.67rem;font-weight:600;text-transform:uppercase;
+  letter-spacing:.09em;color:var(--ink-3);background:var(--surface-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.k{font-family:var(--f-display);font-weight:600;color:var(--ink)}
+.pill{font-family:var(--f-mono);font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;
+  padding:.18rem .4rem;border-radius:2px;white-space:nowrap}
+.pill.auto{color:var(--dev);background:var(--dev-soft)}
+.pill.humano{color:var(--neg);background:var(--neg-soft)}
+.pill.no{color:var(--risk);background:var(--risk-soft)}
+.pill.sim{color:var(--ok);background:var(--ok-soft)}
+
+pre{margin:0;overflow-x:auto;background:var(--surface-2);border:1px solid var(--rule);border-radius:5px;
+  padding:.9rem 1rem;font-family:var(--f-mono);font-size:.745rem;line-height:1.72;color:var(--ink-2)}
+pre b{color:var(--ink);font-weight:600}
+pre .c{color:var(--ink-3);font-style:italic}
+pre .k{color:var(--dev);font-weight:600}
+.filelabel{font-family:var(--f-mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--ink-3);display:block;margin-bottom:.35rem}
+
+.cards{display:grid;gap:.7rem;grid-template-columns:repeat(auto-fit,minmax(225px,1fr))}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:5px;padding:.95rem 1rem;
+  display:flex;flex-direction:column;gap:.45rem;box-shadow:var(--shadow)}
+.card h4{font-family:var(--f-display);font-size:.98rem}
+.card p{font-size:.87rem;color:var(--ink-2);line-height:1.5}
+.card .tagline{font-family:var(--f-mono);font-size:.67rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)}
+.card.d{border-top:3px solid var(--dev)}
+.card.n{border-top:3px solid var(--neg)}
+
+.ladder{display:flex;flex-direction:column;gap:.5rem;counter-reset:l}
+.rung{display:grid;grid-template-columns:auto 1fr auto;gap:.9rem;align-items:baseline;
+  background:var(--surface);border:1px solid var(--rule);border-radius:5px;padding:.75rem .95rem}
+.rung::before{counter-increment:l;content:counter(l);font-family:var(--f-mono);font-size:.72rem;
+  font-weight:600;color:var(--ink-3)}
+.rung b{font-family:var(--f-display);font-size:.97rem;font-weight:600}
+.rung p{font-size:.87rem;color:var(--ink-2);line-height:1.5;margin-top:.15rem}
+
+footer{padding:2.4rem 0 0;border-top:1px solid var(--rule);color:var(--ink-3);font-size:.85rem}
+a{color:var(--dev);text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--dev);outline-offset:2px}
+
+.theme-toggle{position:fixed;top:.9rem;right:.9rem;z-index:50;font-family:var(--f-mono);
+  font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--rule-strong);border-radius:3px;
+  padding:.42rem .6rem;cursor:pointer;box-shadow:var(--shadow)}
+.theme-toggle:hover{color:var(--ink);border-color:var(--ink-3)}
+@media print{
+  :root,:root[data-theme="dark"]{
+    --paper:#FFFFFF;--surface:#FFFFFF;--surface-2:#F2EFE9;
+    --ink:#111111;--ink-2:#3A3E3C;--ink-3:#6A706D;
+    --rule:#CFC9BD;--rule-strong:#A9A296;
+    --dev:#12495C;--dev-soft:#EAF1F4;--neg:#6E4E08;--neg-soft:#F5EEDB;
+    --risk:#8A2E20;--risk-soft:#F8E9E5;--ok:#2F5A3B;--ok-soft:#EAF2EC;--shadow:none;}
+  body{background:#fff;font-size:10pt}
+  .theme-toggle{display:none}
+  .wrap{max-width:none;padding:0}
+  section{padding:1.3rem 0}
+  .card,.rung,.note,.pull,.warn,.say,.tablewrap,pre{break-inside:avoid}
+  h2,h3{break-after:avoid}
+  a{color:inherit;text-decoration:none}
+  pre{white-space:pre-wrap;font-size:8.5pt}
+}
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" type="button" id="tt" aria-label="Alternar tema claro e escuro">Tema</button>
+<script>
+(function(){
+  var root=document.documentElement,btn=document.getElementById('tt'),saved=null;
+  try{saved=localStorage.getItem('rai-tema')}catch(e){}
+  if(saved){root.setAttribute('data-theme',saved)}
+  btn.addEventListener('click',function(){
+    var dark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var atual=root.getAttribute('data-theme')||(dark?'dark':'light');
+    var novo=atual==='dark'?'light':'dark';
+    root.setAttribute('data-theme',novo);
+    try{localStorage.setItem('rai-tema',novo)}catch(e){}
+  });
+})();
+</script>
+<div class="wrap">
+
+<header class="hero">
+  <div class="col">
+    <span class="eyebrow">Manual de operação &middot; Tribo ReabilitAI</span>
+    <h1>Como a base viva é montada, alimentada e usada</h1>
+    <p class="lede">A proposta anterior desenhou as camadas. Este documento responde o &ldquo;como&rdquo;: extrair de um código que já existe, garantir que reflita produção, dar ao PO um lugar para registrar decisão, ingerir norma do Bacen e ata do Teams, separar o que é da tribo do que é da squad, e onde tudo isso é operado.</p>
+  </div>
+</header>
+
+<!-- ============================================ 1 -->
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">01 &middot; Bootstrap</span>
+    <h2>Extrair a base de um código que já tem bastante coisa</h2>
+  </div>
+  <div class="col stack">
+    <div class="warn">
+      <span class="eyebrow">Comece por aqui</span>
+      <p>Não existe extração automática confiável de regra de negócio a partir de código. O que a automação entrega é o <strong>esqueleto</strong> &mdash; a lista do que existe. O conteúdo é preenchido por gente. Pedir a um LLM &ldquo;leia o repo e gere as regras de negócio&rdquo; produz um documento plausível, parcialmente inventado e impossível de auditar &mdash; exatamente o defeito que a base existe para evitar.</p>
+    </div>
+
+    <h3>As fontes do código, da mais rica para a mais pobre</h3>
+    <p>Nem todo arquivo carrega a mesma densidade de negócio. Esta ordem economiza semanas: comece de cima.</p>
+  </div>
+
+  <div class="ladder col" style="margin:1.1rem 0">
+    <div class="rung"><div><b>Testes e2e / BDD</b><p>Descrevem comportamento esperado em linguagem quase de negócio, e são verdade verificável &mdash; se estivessem errados, quebrariam.</p></div><span class="pill auto">Automatizável</span></div>
+    <div class="rung"><div><b>Arquivos de i18n, labels e mensagens de erro</b><p>O vocabulário que o gerente lê na tela. É o glossário do domínio já escrito, de graça, na língua do usuário.</p></div><span class="pill auto">Automatizável</span></div>
+    <div class="rung"><div><b>Validadores, schemas e máquinas de estado</b><p>Onde a regra vive de verdade: limites, obrigatoriedade, transições permitidas. Denso e confiável.</p></div><span class="pill auto">Automatizável</span></div>
+    <div class="rung"><div><b>OpenAPI / contratos</b><p>Campos, obrigatoriedade, códigos de erro. Já é spec &mdash; basta traduzir para linguagem de negócio.</p></div><span class="pill auto">Automatizável</span></div>
+    <div class="rung"><div><b>Feature flags e configuração por ambiente</b><p>Revela o que está ligado para quem. Muita regra de negócio virou flag e ninguém documentou.</p></div><span class="pill auto">Automatizável</span></div>
+    <div class="rung"><div><b>Histórico de PRs e tickets</b><p>Carrega o <em>porquê</em>, que o código nunca tem. Caro de minerar &mdash; use sob demanda, quando uma regra específica não tiver origem.</p></div><span class="pill humano">Sob demanda</span></div>
+    <div class="rung"><div><b>Código de serviço e componente</b><p>A fonte mais volumosa e a menos informativa por linha. Só entra quando uma pergunta específica sobrevive a todas as anteriores.</p></div><span class="pill no">Por último</span></div>
+  </div>
+
+  <div class="col stack">
+    <h3>O método, em três passos</h3>
+    <ol class="steps">
+      <li><b>Inventário gerado, não escrito.</b> Um script varre o repo e produz <code>INVENTARIO.md</code>: cada rota, tela, endpoint, flag, entidade e estado vira uma linha com <code>[ ] sem descrição</code>. Você já tem o Graphify mapeando o codebase &mdash; ele é o candidato natural para essa varredura em vez de um script novo. O inventário é o mapa do que falta, e ele é honesto: mostra o tamanho do buraco.</li>
+      <li><b>Preencher por demanda real, não por ordem alfabética.</b> Pegue as últimas 20 perguntas que o PO fez ao time no chat. Preencha só os itens que respondem a elas. Isso cobre em dias os 20% da base que respondem 80% das perguntas &mdash; e evita o projeto de documentação de seis meses que ninguém termina.</li>
+      <li><b>Nada entra sem origem.</b> Toda linha da base carrega de onde veio: arquivo e linha, número do ticket, ou o marcador explícito <code>origem: conhecimento-do-time (não verificado)</code>. Esse marcador é o que permite auditar depois &mdash; e é o que impede a base de virar folclore com aparência de documentação.</li>
+    </ol>
+
+    <div class="note">
+      <h4>Onde o LLM ajuda de verdade no bootstrap</h4>
+      <p>Não em &ldquo;gere as regras&rdquo;, e sim em &ldquo;leia <em>este</em> validador e escreva, em linguagem de negócio, o que ele impede, citando o trecho&rdquo;. Recorte estreito, trecho citado obrigatório, humano aprova. O rascunho vem em segundos e a auditoria continua possível &mdash; é a diferença entre acelerar e terceirizar o julgamento.</p>
+    </div>
+
+    <div class="say">
+      <span class="eyebrow">Como explicar em uma frase</span>
+      <p>&ldquo;A máquina lista o que existe; a gente escreve o que significa &mdash; e só o que a gente já precisou explicar para alguém.&rdquo;</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ 2 -->
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">02 &middot; Fontes</span>
+    <h2>Não, o archive do SDD não basta</h2>
+    <p class="lede">Sua intuição está certa, e por três razões específicas.</p>
+  </div>
+  <div class="col stack">
+    <ul class="clean">
+      <li><b>Cobertura.</b> O archive só contém o que passou pelo fluxo SDD. Tudo que o produto já era antes do fluxo existir &mdash; que é a maior parte &mdash; simplesmente não está lá.</li>
+      <li><b>Natureza do registro.</b> O archive guarda <em>decisões</em>, não <em>estado atual</em>. A sequência de decisões não é a regra vigente: a decisão nº 4 pode ter revogado a nº 1, e quem lê as duas sem o histórico completo tira a conclusão errada. Decisão é o porquê; a base precisa também do quê.</li>
+      <li><b>Origem.</b> O archive é 100% lado-dev. Norma do Bacen, política de crédito da instituição e acordo de negócio fechado em reunião nunca vão aparecer ali.</li>
+    </ul>
+
+    <h3>As seis fontes, com gatilho e dono</h3>
+  </div>
+  <div class="tablewrap" style="margin-top:1rem">
+    <table>
+      <thead><tr><th>Fonte</th><th>O que entrega</th><th>Gatilho</th><th>Dono</th><th>Modo</th></tr></thead>
+      <tbody>
+        <tr><td class="k">specs/ (OpenAPI)</td><td>contrato: campos, obrigatoriedade, erros</td><td>deploy em PROD</td><td>squad</td><td><span class="pill auto">automático</span></td></tr>
+        <tr><td class="k">Testes e2e / BDD</td><td>comportamento esperado, cenários de exceção</td><td>deploy em PROD</td><td>squad</td><td><span class="pill auto">automático</span></td></tr>
+        <tr><td class="k">i18n / labels</td><td>vocabulário real do usuário; alimenta o glossário</td><td>deploy em PROD</td><td>squad</td><td><span class="pill auto">automático</span></td></tr>
+        <tr><td class="k">.sdd/decisoes/</td><td>o porquê, e a alternativa descartada</td><td>archive do fluxo</td><td>squad</td><td><span class="pill auto">automático</span></td></tr>
+        <tr><td class="k">Curadoria humana</td><td>regra que só existe na cabeça de alguém</td><td>ritual da sprint</td><td>PO + dev</td><td><span class="pill humano">manual</span></td></tr>
+        <tr><td class="k">Fontes externas</td><td>Bacen, política de crédito, ata do Teams, contrato</td><td>agente curador</td><td>PO / negócio</td><td><span class="pill humano">assistido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col stack" style="margin-top:1.2rem">
+    <div class="say">
+      <span class="eyebrow">Como explicar em uma frase</span>
+      <p>&ldquo;O código conta o que o sistema faz, o archive conta por que foi decidido assim, e a curadoria conta o que nenhum dos dois sabe &mdash; a base precisa dos três.&rdquo;</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ 3 -->
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">03 &middot; Workflows</span>
+    <h2>O que entregar para o time que escreve os pipelines</h2>
+    <p class="lede">Um erro de desenho aqui contamina tudo: <code>main</code> não é produção. Se a base publicar no merge, ela vai afirmar para o PO que uma regra está valendo antes de ela chegar ao cliente.</p>
+  </div>
+  <div class="col stack">
+    <h3>As duas prateleiras</h3>
+    <p>A base tem dois estados, em pastas fisicamente separadas. O PO precisa dos dois, mas precisa saber qual é qual &mdash; e o agente precisa dizer de qual prateleira tirou a resposta.</p>
+    <div class="cards">
+      <div class="card d">
+        <span class="tagline">publicado/</span>
+        <h4>O que o cliente vê hoje</h4>
+        <p>Atualizado só quando um deploy chega a produção com sucesso. É a prateleira que responde &ldquo;como funciona hoje&rdquo;.</p>
+      </div>
+      <div class="card n">
+        <span class="tagline">em-voo/</span>
+        <h4>O que já foi mergeado e ainda não subiu</h4>
+        <p>Atualizado no merge para <code>main</code>. Responde &ldquo;o que muda na próxima release&rdquo;. Nunca é citado como regra vigente.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:1.4rem">O contrato do workflow &mdash; entregue esta lista</h3>
+    <ol class="steps">
+      <li><b>Gatilho de PROD, não de merge.</b> O job de <code>publicado/</code> dispara em <code>deployment_status</code> com <code>state == success</code> e ambiente de produção, ou no <code>release: published</code> &mdash; o que a esteira do banco já emitir. O de <code>em-voo/</code> dispara no <code>push</code> para <code>main</code>. Se a esteira de deploy for externa ao GitHub, ela chama um <code>repository_dispatch</code>. Esse é o único ponto onde vocês precisam de uma decisão de infra, e vale a conversa.</li>
+      <li><b>Roda depois do deploy e nunca o bloqueia.</b> Workflow separado da esteira de entrega. Se a publicação da base falhar, alerta no canal do time &mdash; o deploy já aconteceu e não deve ser revertido por causa de documentação.</li>
+      <li><b>Autenticação por GitHub App, não por token pessoal.</b> O workflow escreve em <em>outro</em> repositório. Um PAT de pessoa física é ponto único de falha, some quando a pessoa muda de área e ninguém sabe rotacionar. App instalado nos dois repositórios, permissão mínima: leitura no produto, PR no conhecimento.</li>
+      <li><b>Allowlist explícita de caminhos.</b> O extrator declara o que <em>pode</em> sair (<code>specs/**</code>, <code>src/**/i18n/*.json</code>, <code>e2e/**/*.feature</code>, <code>.sdd/decisoes/**</code>). Nunca uma lista do que não pode: blocklist vaza no dia em que alguém cria uma pasta nova.</li>
+      <li><b>Abre PR, não commita direto.</b> Branch fixa por produto (<code>sync/cockpit-renegociacao</code>), com force-push. Uma branch fixa evita 40 PRs abertos e mantém a revisão humana no caminho. Se o conteúdo gerado for idêntico ao publicado, não abre PR nenhum &mdash; idempotência é requisito, não detalhe.</li>
+      <li><b>Metadados obrigatórios no PR.</b> Tag da release, SHA do commit em produção, data-hora e a lista de arquivos afetados. É o que alimenta o <code>CHANGELOG.md</code> e o campo <code>base_consultada</code> que torna a user story auditável meses depois.</li>
+      <li><b>O extrator mora no repositório de conhecimento.</b> Não no repo de produto. Assim uma correção no extrator não exige PR em cinco repositórios de squad, e o repo de produto só chama uma action reutilizável. É o mesmo princípio de baixo acoplamento das camadas.</li>
+    </ol>
+
+    <div class="stack" style="gap:.5rem;margin-top:.4rem">
+      <span class="filelabel">Esqueleto para a conversa &mdash; repo de produto</span>
+      <pre><span class="k">name</span>: publica-base-conhecimento
+<span class="k">on</span>:
+  <span class="k">deployment_status</span>: {}          <span class="c"># deploy concluído</span>
+  <span class="k">workflow_dispatch</span>: {}           <span class="c"># backfill manual</span>
+
+<span class="k">jobs</span>:
+  <span class="k">publicar</span>:
+    <span class="c"># só quando o deploy foi de produção e deu certo</span>
+    <span class="k">if</span>: github.event.deployment_status.state == 'success' &amp;&amp;
+        github.event.deployment_status.environment == 'production'
+    <span class="k">runs-on</span>: ubuntu-latest
+    <span class="k">steps</span>:
+      - <span class="k">uses</span>: actions/checkout@v4
+        <span class="k">with</span>: { ref: '${{ github.event.deployment.sha }}' }
+
+      <span class="c"># action reutilizável versionada no repo de CONHECIMENTO</span>
+      - <span class="k">uses</span>: org/reabilitai-conhecimento/.github/actions/extrair@v1
+        <span class="k">with</span>:
+          produto: cockpit-renegociacao
+          prateleira: publicado
+          allowlist: |
+            specs/**
+            e2e/**/*.feature
+            src/**/i18n/*.json
+            .sdd/decisoes/**</pre>
+    </div>
+
+    <div class="say">
+      <span class="eyebrow">Como explicar em uma frase</span>
+      <p>&ldquo;A base só muda quando o cliente muda &mdash; o gatilho é o deploy em produção, não o merge.&rdquo;</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ 4 -->
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">04 &middot; Camada do PO</span>
+    <h2>Onde ficam as discussões e decisões de negócio</h2>
+  </div>
+  <div class="col stack">
+    <div class="warn">
+      <span class="eyebrow">A metáfora de branch não serve</span>
+      <p>Branch existe para uma mudança que será mesclada e desaparecer. Discussão e decisão de negócio são o oposto: <strong>acumulam e permanecem</strong>. Pior: o Space indexa a branch padrão &mdash; conhecimento numa branch paralela fica invisível para o agente exatamente enquanto está sendo usado. O que você quer não é uma branch, é uma <strong>pasta com ciclo de vida</strong>.</p>
+    </div>
+
+    <h3>Três pastas, três naturezas diferentes</h3>
+    <div class="cards">
+      <div class="card n">
+        <span class="tagline">decisoes/</span>
+        <h4>Decisão de negócio</h4>
+        <p>Uma decisão por arquivo, permanente. Nunca é apagada &mdash; quando muda, a antiga vira <code>status: superada-por</code>. É o equivalente de negócio do <code>.sdd/decisoes/</code> do dev.</p>
+      </div>
+      <div class="card n">
+        <span class="tagline">discovery/</span>
+        <h4>Discovery em curso</h4>
+        <p>Um arquivo por demanda viva: briefing, refinamento, perguntas em aberto. Some quando a demanda vira story entregue &mdash; move para <code>decisoes/</code> o que virou regra.</p>
+      </div>
+      <div class="card n">
+        <span class="tagline">historico/</span>
+        <h4>Story entregue</h4>
+        <p>A story final, como foi entregue, imutável. Nunca é editada &mdash; uma revisão vira arquivo novo apontando para o anterior.</p>
+      </div>
+      <div class="card d">
+        <span class="tagline">publicado/ &middot; em-voo/</span>
+        <h4>Realidade do sistema</h4>
+        <p>Escrito só por robô. O PO nunca edita aqui. Se ele discorda do que está escrito, abre uma decisão &mdash; não corrige o espelho.</p>
+      </div>
+    </div>
+
+    <div class="stack" style="gap:.5rem;margin-top:1.2rem">
+      <span class="filelabel">decisoes/2026-08-prazo-maximo-parcelamento.md</span>
+      <pre>---
+<span class="k">titulo</span>: Prazo máximo de parcelamento na renegociação assistida
+<span class="k">status</span>: vigente        <span class="c"># proposta | vigente | superada</span>
+<span class="k">decidido_em</span>: 2026-08-14
+<span class="k">decidido_por</span>: [PO cockpit, jurídico, risco]
+<span class="k">supera</span>: null
+<span class="k">origem</span>: reunião de comitê 14/08 + norma interna PC-114
+<span class="k">afeta</span>: [cockpit-renegociacao]
+---
+
+<b>## Decisão</b>
+O prazo máximo é 60 meses, e não 72, para o perfil de cliente X.
+
+<b>## Por quê</b>
+&lt;o raciocínio, incluindo o que foi descartado e o motivo&gt;
+
+<b>## O que muda no produto</b>
+&lt;impacto observável &mdash; se não houver, isso não é decisão, é opinião&gt;
+
+<b>## Em aberto</b>
+- **[NÃO RESPONDIDO]** vale para renegociação em atraso acima de 180 dias?</pre>
+    </div>
+
+    <div class="note">
+      <h4>Por que o PO escreve por Pull Request, e por que isso não é burocracia</h4>
+      <p>O PR dá três coisas de graça que nenhuma wiki dá: alguém revisa antes de virar verdade para o agente; fica registrado quem decidiu e quando; e dá para reverter. Na prática o PO não vê Git &mdash; ele conversa com o agente, o agente escreve o arquivo e abre o PR. O botão que ele aperta chama &ldquo;registrar decisão&rdquo;.</p>
+    </div>
+
+    <h3 style="margin-top:1.4rem">A story entregue vira artefato &mdash; e por que isso não é duplicar o Jira</h3>
+    <p>A story executável vive no Jira; ninguém vai trocar isso. O que a base guarda não é a story como tarefa, é o <strong>envelope de proveniência</strong>: o texto final mais contra qual versão da base ele foi escrito. Sem esse envelope, daqui a oito meses a pergunta &ldquo;por que o cockpit faz assim?&rdquo; não tem resposta &mdash; o Jira mostra o que foi pedido, nunca a regra que estava valendo quando alguém pediu.</p>
+    <div class="stack" style="gap:.5rem;margin-top:.9rem">
+      <span class="filelabel">squads/cockpit-renegociacao/historico/2026-08/RNG-1234-limite-parcelamento.md</span>
+      <pre>---
+<span class="k">ticket</span>: RNG-1234
+<span class="k">titulo</span>: Limitar parcelamento a 60x no perfil X
+<span class="k">entregue_em</span>: 2026-08-22
+<span class="k">po</span>: &lt;nome&gt;
+<span class="k">base_consultada</span>:                <span class="c"># o que torna auditável depois</span>
+  - squads/cockpit-renegociacao/publicado/regras-negocio.md@a3f21c9
+  - tribo/politicas-credito.md@7e40b12
+<span class="k">decisoes</span>: [2026-08-prazo-maximo-parcelamento]
+<span class="k">lacunas_no_encerramento</span>: 1   <span class="c"># [NÃO RESPONDIDO] que sobreviveram</span>
+<span class="k">qualidade</span>: referencia          <span class="c"># referencia | comum</span>
+<span class="k">revisa</span>: null                  <span class="c"># aponta para a story que esta substitui</span>
+---
+
+&lt;texto final da story, como foi para o Jira&gt;</pre>
+    </div>
+
+    <h4 style="margin-top:1.1rem">Três usos que pagam a pasta</h4>
+    <ul class="clean">
+      <li><b>Auditoria.</b> Em banco, &ldquo;por que este comportamento existe&rdquo; é pergunta com data marcada. Story + SHA da base + decisão referenciada responde em um minuto o que hoje custa uma semana de arqueologia.</li>
+      <li><b>Exemplo para o próprio agente.</b> As stories marcadas <code>qualidade: referencia</code> ensinam ao <code>po-gerar-user-story</code> o que é uma boa story <em>nesta squad</em> &mdash; funciona muito melhor que descrever o padrão em prosa. Só as marcadas: se todas entrarem, o agente aprende também os vícios.</li>
+      <li><b>Detecção de deriva.</b> Uma story afirmou a regra contra a base de março; a base de hoje diz outra coisa. Um job compara os SHAs e sinaliza. É isso que transforma histórico morto em sinal vivo &mdash; sem essa checagem a pasta é só um cemitério organizado.</li>
+    </ul>
+
+    <div class="warn" style="margin-top:1rem">
+      <span class="eyebrow">Cuidado que vale mais que a pasta</span>
+      <p><code>historico/</code> fica <strong>fora</strong> do que o agente de refinamento consulta. Duzentas stories por ano competindo com a regra vigente é o jeito mais rápido de o agente responder com o que foi pedido em março em vez do que vale hoje. Só o agente de geração (como exemplo) e o de auditoria (sob pedido) leem essa pasta. Some a isso a checagem de dado pessoal no PR: story costuma carregar nome e número de cliente em exemplo.</p>
+    </div>
+
+    <div class="say">
+      <span class="eyebrow">Como explicar em uma frase</span>
+      <p>&ldquo;O robô escreve o que o sistema faz, o PO escreve o que foi decidido, e cada story entregue fica guardada com a foto da base que ela usou.&rdquo;</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ 5 -->
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">05 &middot; Curadoria</span>
+    <h2>Trazer PDF, docx, ata do Teams e norma do Bacen</h2>
+    <p class="lede">É a camada que transforma a base de &ldquo;espelho do código&rdquo; em base de conhecimento de negócio. Também é a que mais pode envenenar a base, porque aqui entra texto que ninguém escreveu pensando em ser fonte de verdade.</p>
+  </div>
+  <div class="col stack">
+    <h3>O fluxo: caixa de entrada, agente, PR</h3>
+    <ol class="steps">
+      <li><b>O PO larga a fonte em <code>inbox/</code>.</b> PDF, docx, um <code>.md</code> com o texto colado do Teams, ou um arquivo de uma linha com a URL do Bacen. Nenhum formato é rejeitado nessa porta &mdash; atrito aqui mata a adesão.</li>
+      <li><b>O agente curador normaliza.</b> Converte para markdown, identifica de que trata, e produz um arquivo estruturado com o cabeçalho de proveniência obrigatório. Ele separa fisicamente duas seções: <strong>trecho literal</strong> e <strong>leitura de negócio</strong>. Nunca funde as duas.</li>
+      <li><b>Ele propõe, não publica.</b> Sai um PR com o arquivo normalizado, o original preservado em <code>fontes/</code> e um resumo do que ele afirma ter entendido. Um humano aprova.</li>
+      <li><b>Conflito é reportado, não resolvido.</b> Se a fonte nova contradiz algo já publicado, o agente abre a divergência no corpo do PR e para. Reconciliar norma do Bacen com regra implementada é decisão de negócio, não de agente.</li>
+    </ol>
+
+    <div class="pull">
+      <span class="eyebrow">A regra que protege a base</span>
+      Norma externa nunca vira regra parafraseada. O arquivo carrega o <strong>trecho literal citado</strong> e o link para a fonte; a interpretação vive numa seção separada, assinada por quem interpretou. Parafrasear circular do Bacen sem o texto original é como inferir critério de aceite &mdash; parece pronto e é indefensável numa auditoria.
+    </div>
+
+    <div class="stack" style="gap:.5rem">
+      <span class="filelabel">externas/bacen-res-4966-provisionamento.md</span>
+      <pre>---
+<span class="k">tipo</span>: norma-externa      <span class="c"># norma-externa | politica-interna | ata | contrato</span>
+<span class="k">fonte</span>: BACEN &mdash; Resolução 4.966
+<span class="k">url</span>: https://www.bcb.gov.br/...
+<span class="k">obtido_em</span>: 2026-08-27
+<span class="k">curado_por</span>: henrique.silverio
+<span class="k">confianca</span>: alta          <span class="c"># alta (documento oficial) | media (ata) | baixa (chat)</span>
+<span class="k">afeta</span>: [tribo]
+---
+
+<b>## Trecho literal</b>
+&gt; "..." &lt;citação exata, sem edição&gt;
+
+<b>## Leitura de negócio</b>
+&lt;o que isso significa para a renegociação &mdash; interpretação, marcada como tal&gt;
+
+<b>## Impacto declarado</b>
+&lt;o que muda, ou "nenhum impacto identificado"&gt;</pre>
+    </div>
+
+    <div class="note">
+      <h4>O campo <code>confianca</code> é o que separa esta base de uma pasta de arquivos</h4>
+      <p>Resumo de conversa no Teams e resolução do Bacen não podem valer o mesmo. O agente é instruído a citar a fonte com o nível de confiança junto &mdash; &ldquo;segundo uma ata de reunião (confiança média)&rdquo; soa diferente de &ldquo;segundo a Resolução 4.966&rdquo;, e é essa diferença que o PO precisa ouvir antes de escrever a story.</p>
+    </div>
+
+    <div class="warn">
+      <span class="eyebrow">Risco a declarar para segurança</span>
+      <p>Esta camada aceita documento externo e o coloca num repositório que alimenta um agente. Documento externo pode conter instrução embutida (<em>prompt injection</em>) e pode conter dado de cliente. Duas travas: o curador trata todo conteúdo de <code>inbox/</code> como <strong>dado, nunca como instrução</strong>, e o PR tem checagem de dado pessoal antes do merge. Leve isso para a conversa com segurança antes que eles descubram sozinhos.</p>
+    </div>
+
+    <div class="say">
+      <span class="eyebrow">Como explicar em uma frase</span>
+      <p>&ldquo;Você joga o documento na caixa de entrada; o agente devolve uma ficha organizada com a citação e o link, e você confirma se entendeu certo.&rdquo;</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ 6 -->
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">06 &middot; Camadas</span>
+    <h2>Tribo ReabilitAI e a squad do Cockpit</h2>
+    <p class="lede">Regra geral de recuperação de crédito vale para todos os produtos. Regra do cockpit do gerente vale só para o cockpit. Misturar as duas é o jeito mais rápido de o agente afirmar para uma squad a regra de outra.</p>
+  </div>
+  <div class="col stack">
+    <div class="stack" style="gap:.5rem">
+      <span class="filelabel">Um repositório, dois níveis, dono por pasta</span>
+      <pre><b>reabilitai-conhecimento/</b>
+  INDEX.md
+  CODEOWNERS                    <span class="c"># quem aprova o quê</span>
+
+  <b>tribo/</b>                        <span class="c"># vale para TODOS os produtos</span>
+    glossario.md                <span class="c"># "dívida elegível", "acordo", "rolagem"</span>
+    politicas-credito.md
+    externas/                   <span class="c"># Bacen, normas internas</span>
+    decisoes/                   <span class="c"># decisões de nível tribo</span>
+
+  <b>squads/cockpit-renegociacao/</b>   <span class="c"># SEU produto</span>
+    publicado/                  <span class="c"># robô — reflete PROD</span>
+    em-voo/                     <span class="c"># robô — mergeado, não publicado</span>
+    decisoes/                   <span class="c"># PO do cockpit</span>
+    discovery/                  <span class="c"># demandas em curso</span>
+    historico/&lt;ano-mes&gt;/         <span class="c"># stories entregues, imutáveis</span>
+
+  <b>squads/&lt;outro-produto&gt;/</b>        <span class="c"># mesma forma, outro dono</span>
+
+  <b>inbox/</b>                        <span class="c"># caixa de entrada da curadoria</span>
+  <b>agentes/</b>                      <span class="c"># instruções canônicas dos agentes</span></pre>
+    </div>
+
+    <p>Um repositório só, com <code>CODEOWNERS</code> por pasta &mdash; e não um repositório por squad. O motivo é o glossário: termos de recuperação de crédito atravessam produtos, e referência cruzada entre repositórios apodrece rápido. Se uma squad precisar de controle de acesso diferente do resto, aí sim ela sai para um repositório próprio; separar antes disso é custo sem benefício.</p>
+
+    <h3>A regra de precedência &mdash; escreva na instrução dos três agentes</h3>
+    <div class="pull">
+      <span class="eyebrow">Contrato entre camadas</span>
+      A regra da squad <strong>especializa</strong> a da tribo; nunca a contradiz. Quando o agente encontra contradição real entre <code>tribo/</code> e <code>squads/</code>, ele <strong>reporta e para</strong> &mdash; não escolhe a mais específica, não concilia, não infere qual está mais atualizada. Contradição entre camadas é achado de governança e vira decisão registrada.
+    </div>
+    <p>Sem essa frase explícita, o modelo faz o que parece razoável: pega a mais específica e segue. Aí uma regra de tribo revogada continua valendo silenciosamente num produto, e ninguém descobre até a auditoria.</p>
+
+    <div class="cards" style="margin-top:.4rem">
+      <div class="card n">
+        <span class="tagline">Space da tribo</span>
+        <h4>Só <code>tribo/</code></h4>
+        <p>Para PMO e negócio que trabalham no nível de portfólio. Não vê detalhe de produto nenhum.</p>
+      </div>
+      <div class="card d">
+        <span class="tagline">Space da squad</span>
+        <h4><code>tribo/</code> + <code>squads/cockpit-renegociacao/</code></h4>
+        <p>Onde você e seu PO operam. Herda a regra geral, enxerga o detalhe do cockpit, ignora os outros produtos.</p>
+      </div>
+    </div>
+
+    <div class="say">
+      <span class="eyebrow">Como explicar em uma frase</span>
+      <p>&ldquo;A tribo define o que vale para toda recuperação de crédito; a squad define como o cockpit faz. Quando os dois se contradizem, o agente levanta a mão em vez de escolher.&rdquo;</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ 7 -->
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">07 &middot; Superfície</span>
+    <h2>GitHub Copilot app, skills e canvas</h2>
+  </div>
+  <div class="col stack">
+    <div class="warn">
+      <span class="eyebrow">Correção de premissa</span>
+      <p>O GitHub Copilot app é um <strong>aplicativo desktop</strong> (macOS, Windows, Linux), não uma página web. Ele não elimina a instalação &mdash; troca o VS Code por outro programa que também precisa entrar na máquina do PO, com pedido de liberação de software no banco. O que ele <em>elimina de verdade</em> é o problema que você levantou: cada sessão monta e atualiza seu próprio workspace a partir do GitHub, então o PO nunca gerencia clone, branch nem <code>git pull</code>.</p>
+    </div>
+
+    <h3>Onde ficam as configurações</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Artefato</th><th>Caminho no repositório</th><th>Caminho pessoal</th><th>Serve para</th></tr></thead>
+        <tbody>
+          <tr><td class="k">Agente</td><td><code>.github/agents/&lt;nome&gt;.agent.md</code><br><span style="color:var(--ink-3)">org: <code>/agents/&lt;nome&gt;.md</code> no repo <code>.github</code></span></td><td><code>~/.copilot/agents/</code></td><td>quem é o agente, com que ferramentas, em contexto isolado</td></tr>
+          <tr><td class="k">Skill</td><td><code>.github/skills/</code> &middot; <code>.claude/skills/</code> &middot; <code>.agents/skills/</code></td><td><code>~/.copilot/skills/</code></td><td>procedimento reutilizável, compartilhado entre agentes</td></tr>
+          <tr><td class="k">Canvas extension</td><td><code>.github/extensions/</code></td><td><code>~/.copilot/extensions/</code></td><td>o quadro do discovery, com estado</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note" style="margin-top:.9rem">
+      <h4>Achado que resolve um bloqueio seu</h4>
+      <p>Skills também são reconhecidas em <code>.agents/skills/</code> e <code>.claude/skills/</code>, não só em <code>.github/skills/</code>. Como você não pode commitar em <code>.github/</code> nos repositórios de produto do banco, use <code>.agents/skills/</code> lá. No repositório de conhecimento, que é novo e da tribo, provavelmente não há restrição &mdash; confirme antes de padronizar.</p>
+    </div>
+
+    <h3 style="margin-top:1.5rem">Agente ou skill: são camadas diferentes, não alternativas</h3>
+    <p>Você está certo em querer agentes próprios &mdash; e o ganho é maior do que &ldquo;ter regras específicas&rdquo;. Um agente roda como <strong>subagente com janela de contexto isolada</strong> e pode <strong>restringir as ferramentas</strong> que consegue usar. Isso converte em impossibilidade técnica duas regras que, com skills, eram só texto pedindo bom comportamento.</p>
+    <div class="pull">
+      <span class="eyebrow">Trava por ferramenta, não por prosa</span>
+      Eu havia escrito &ldquo;o agente de discovery não lê código&rdquo; como regra em texto. Regra em texto é sugestão. Declarando <code>tools</code> sem a ferramenta de busca, o <code>po-iniciar-discovery</code> fica <strong>incapaz</strong> de ler código. É o mesmo princípio que você já validou no <code>/sdd-review</code>, que declara <code>createFile</code> e não <code>editFiles</code> justamente para não conseguir alterar o que audita.
+    </div>
+    <p>O segundo ganho é o contexto isolado: com três skills num mesmo chat, o histórico da entrevista vaza para a geração da story e as instruções competem entre si. Com agentes, cada etapa começa limpa.</p>
+
+    <div class="tablewrap" style="margin-top:1rem">
+      <table>
+        <thead><tr><th>Camada</th><th>Responde</th><th>Escopo</th><th>No nosso caso</th></tr></thead>
+        <tbody>
+          <tr><td class="k">Agente</td><td>quem é, com que ferramentas, com que contexto</td><td>uma etapa inteira do fluxo</td><td>4 agentes: as três etapas + o curador</td></tr>
+          <tr><td class="k">Skill</td><td>como se faz um procedimento específico</td><td>carregada por qualquer agente que precise</td><td>formato do BDR, conversão de PDF/docx, regra de precedência, glossário</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.94rem;color:var(--ink-2);margin-top:.7rem">A divisão evita o débito clássico: duplicar o formato do artefato dentro de cada agente e depois corrigir em quatro lugares. Procedimento que mais de um agente usa é skill; comportamento e permissão são do agente.</p>
+
+    <div class="stack" style="gap:.5rem;margin-top:1.3rem">
+      <span class="filelabel">.github/agents/po-refinar-negocio.agent.md</span>
+      <pre>---
+<span class="k">name</span>: po-refinar-negocio
+<span class="k">description</span>: Confronta um briefing de discovery com as regras publicadas da
+  tribo e da squad. Aponta conflito, duplicidade e impacto em jornada existente.
+  Use depois de po-iniciar-discovery e antes de gerar a user story.
+<span class="k">tools</span>: [read, search]        <span class="c"># lê a base; NÃO escreve, NÃO roda comando</span>
+---
+
+<b>## O que você faz</b>
+&lt;comportamento da etapa&gt;
+
+<b>## Precedência entre camadas</b>
+Regra de squad especializa regra de tribo. Contradição real: reporte e pare.
+
+<b>## Trava</b>
+Só afirme o que está no briefing ou em arquivo da base, citando o caminho.
+Lacuna vira **[NÃO RESPONDIDO]**. Nunca complete com o que costuma ser feito.</pre>
+    </div>
+    <p style="font-size:.93rem;color:var(--ink-2)">O <code>description</code> é o que faz o agente ser escolhido por inferência &mdash; escreva nele <em>quando usar</em>, não o que ele é. Com quatro agentes de nomes parecidos, mantenha as descrições disjuntas, senão o roteamento erra e o PO acaba na etapa errada sem perceber.</p>
+
+    <h3 style="margin-top:1.5rem">As ferramentas de cada agente</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Agente</th><th>Ferramentas</th><th>O que isso impede</th></tr></thead>
+        <tbody>
+          <tr><td class="k">po-iniciar-discovery</td><td>nenhuma de busca</td><td>não consegue ler código nem a base &mdash; entrevista de verdade, sem antecipar solução</td></tr>
+          <tr><td class="k">po-refinar-negocio</td><td><code>read</code>, <code>search</code></td><td>não escreve nada; não pode &ldquo;corrigir&rdquo; a base para caber no briefing</td></tr>
+          <tr><td class="k">po-gerar-user-story</td><td><code>read</code>, <code>createFile</code></td><td>não altera arquivo existente; a story nasce nova e não sobrescreve decisão</td></tr>
+          <tr><td class="k">po-curar-fonte</td><td><code>shell</code>, <code>read</code>, <code>createFile</code></td><td>converte PDF/docx e propõe, mas não edita a base publicada</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warn" style="margin-top:1.1rem">
+      <span class="eyebrow">O risco que vem junto</span>
+      <p><code>~/.copilot/agents/</code> é <strong>por máquina</strong>, e um agente com o mesmo nome ali <strong>sobrescreve o do repositório</strong>. Um PO com cópia velha na pasta pessoal continua usando a versão antiga em silêncio, e ninguém descobre &mdash; é exatamente o problema de artefato desatualizado na máquina do usuário que motivou toda esta iniciativa, reintroduzido pela porta dos fundos. Regra: pasta pessoal serve para você experimentar; distribuição é sempre pelo repositório, e o ideal é o <strong>nível de organização</strong> (<code>/agents/&lt;nome&gt;.md</code> no repo <code>.github</code> da org), que entrega o mesmo agente para todos sem depender de cópia local nem de commit no <code>.github/</code> de cada produto. Esse caminho pede uma conversa com quem administra a organização &mdash; vale começar cedo, porque é o canal sancionado.</p>
+    </div>
+
+    <div class="note" style="margin-top:.9rem">
+      <h4>Um detalhe que preserva o desenho por camadas</h4>
+      <p>O perfil do agente aceita configuração de <strong>MCP servers</strong>. Quando o MCP oficial da Atlassian for aprovado, ele entra no <code>po-gerar-user-story</code> &mdash; só nele &mdash; e passa a escrever no Jira. Nenhum outro agente ganha acesso, e nada mais no desenho muda.</p>
+    </div>
+
+    <h3 style="margin-top:1.5rem">O canvas resolve o ponto fraco do desenho anterior</h3>
+    <p>Na proposta com Spaces, o handoff entre as três etapas era manual: o PO copiava o markdown de um Space para o outro. O canvas extension elimina isso. Ele é uma superfície interativa com <strong>estado persistido em JSON</strong>, com botões que o humano aperta e capacidades que o agente chama &mdash; ou seja, é literalmente a máquina de estados que faltava.</p>
+    <ul class="clean">
+      <li><b>Um quadro por demanda</b>, com as três etapas visíveis e a etapa atual destacada.</li>
+      <li><b>As lacunas <code>[NÃO RESPONDIDO]</code> viram itens do quadro</b>, não linhas perdidas no meio de um texto. É a diferença entre a trava anti-inferência ser um detalhe e ser a coisa que o PO olha primeiro.</li>
+      <li><b>Botões que chamam as skills</b>: &ldquo;refinar com a base&rdquo;, &ldquo;gerar story&rdquo;, &ldquo;registrar decisão&rdquo; &mdash; o PO nunca digita nome de comando nem vê Git.</li>
+      <li><b>Criado com <code>/create-canvas</code></b> dentro de uma sessão: você descreve o fluxo e o agente gera o <code>package.json</code> e o <code>extension.mjs</code>. Depois versiona no repositório como qualquer código.</li>
+    </ul>
+
+    <h3 style="margin-top:1.4rem">Recomendação: duas superfícies, um conteúdo</h3>
+    <div class="cards">
+      <div class="card d">
+        <span class="tagline">Navegador &middot; zero instalação</span>
+        <h4>Copilot Space</h4>
+        <p>Para quem só pergunta: PMO, negócio, PO de outra squad. Consulta a base, não produz artefato. É a porta de entrada e a que escala sem pedir nada para ninguém.</p>
+      </div>
+      <div class="card n">
+        <span class="tagline">Desktop &middot; requer liberação</span>
+        <h4>Copilot app</h4>
+        <p>Para quem opera o fluxo: o PO que roda as três etapas, usa o canvas e abre PR na base. Poucos usuários, mais capacidade.</p>
+      </div>
+    </div>
+    <p style="margin-top:.9rem">As duas superfícies leem o <strong>mesmo repositório</strong>, mas não têm a mesma capacidade &mdash; e isso precisa ficar claro para quem decide. O Space aceita apenas <strong>instrução em texto</strong>: ele consegue reproduzir o comportamento do agente, não a restrição de ferramenta. A trava &ldquo;não consegue ler código&rdquo; existe de verdade só no Copilot app. No Space ela volta a ser um pedido.</p>
+    <p style="margin-top:.7rem">Por isso o arquivo <code>.agent.md</code> versionado é a <strong>fonte canônica</strong>: o app o consome direto, e a instrução do Space é uma cópia gerada dele. Uma fonte, duas superfícies com capacidades diferentes &mdash; declarado, e não descoberto no meio de um refinamento.</p>
+
+    <div class="say">
+      <span class="eyebrow">Como explicar em uma frase</span>
+      <p>&ldquo;Cada etapa vira um agente com as ferramentas que ela pode usar &mdash; o de entrevista não consegue ler código, o de revisão não consegue escrever. Quem só quer perguntar usa o navegador; quem toca o discovery inteiro instala o app.&rdquo;</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ 8 -->
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">08 &middot; Depois</span>
+    <h2>Quanto custa transformar isso num RAG próprio</h2>
+    <p class="lede">Primeiro, o reenquadramento: o Space já faz recuperação sobre o repositório &mdash; na prática você já tem um RAG, só que gerenciado por outra pessoa. A pergunta real é o esforço de ter um <em>índice próprio</em>, com endpoint que qualquer cliente consulta, inclusive a Bia Tech.</p>
+  </div>
+  <div class="col stack">
+    <div class="pull">
+      <span class="eyebrow">A boa notícia, e ela é grande</span>
+      O que mata a maioria dos projetos de RAG não é o índice vetorial &mdash; é não ter corpus curado, metadado confiável e pipeline de atualização. O repositório entrega os três de saída: conteúdo curado por gente, arquivos curtos por assunto (que já são o <em>chunk</em>), frontmatter estruturado (que já é o filtro), versionamento com proveniência e uma esteira que atualiza sozinha. Isso é a maior parte do trabalho, e é a parte que não dá para comprar.
+    </div>
+
+    <h3>O que falta, item a item</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Etapa</th><th>O que é</th><th>Esforço</th><th>Depende de</th></tr></thead>
+        <tbody>
+          <tr><td class="k">Ingestão e chunking</td><td>quebrar markdown por seção, herdando o frontmatter como metadado</td><td>2&ndash;3 dias</td><td>ninguém</td></tr>
+          <tr><td class="k">Embeddings e índice</td><td>escolher modelo e onde o índice vive</td><td>2&ndash;3 dias de código</td><td><b>plataforma aprovada</b></td></tr>
+          <tr><td class="k">API de consulta</td><td>busca com <strong>filtro obrigatório</strong> por prateleira, squad e status</td><td>3&ndash;5 dias</td><td>etapa anterior</td></tr>
+          <tr><td class="k">Reindexação</td><td>a Action que já publica dispara o reindex</td><td>1 dia</td><td>esteira já existente</td></tr>
+          <tr><td class="k">Avaliação</td><td>30 a 50 perguntas reais com resposta esperada, rodadas a cada mudança</td><td>3&ndash;5 dias</td><td>piloto ter acontecido</td></tr>
+          <tr><td class="k">Governança</td><td>quem consulta o quê, log de consulta</td><td>a definir</td><td>segurança</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:.9rem"><strong>Duas a quatro semanas de uma pessoa</strong>, se a plataforma de embeddings já existir e estiver aprovada no banco. Se não existir, o prazo não é de engenharia &mdash; é de aprovação, e some com qualquer estimativa que eu escreva aqui. O gargalo é plataforma, nunca código.</p>
+
+    <div class="warn">
+      <span class="eyebrow">O filtro é o item inegociável</span>
+      <p>Um RAG sem filtro por metadado responde com regra superada, com conteúdo de outra squad e com story de março &mdash; tudo com a mesma confiança. O filtro obrigatório por <code>prateleira=publicado</code>, <code>squad</code> e <code>status=vigente</code> é o que separa uma ferramenta útil de uma máquina de desinformação bem indexada. Se cortar escopo, corte de outro lugar.</p>
+    </div>
+
+    <h3>Quando construir</h3>
+    <p>Não antes de o Space falhar de forma <strong>medível</strong>. Saia do Space quando tiver a lista concreta das perguntas do piloto que ele errou &mdash; essa lista é ao mesmo tempo a justificativa do investimento e o conjunto de avaliação do RAG novo. Construir índice próprio sem essa evidência é gastar três semanas para descobrir que o problema era curadoria, não recuperação.</p>
+
+    <h3>As cinco escolhas que custam zero hoje e economizam semanas depois</h3>
+    <ul class="clean">
+      <li><b>Um arquivo, um assunto.</b> Arquivo que trata de três coisas vira chunk ruim, e não tem conserto na etapa de indexação.</li>
+      <li><b>Frontmatter padronizado e obrigatório.</b> É literalmente o filtro do RAG. Campo que não existir hoje não vai poder ser filtrado depois sem reprocessar tudo.</li>
+      <li><b>Texto que se sustenta sozinho.</b> Nada de &ldquo;conforme visto acima&rdquo;: o chunk chega ao modelo sem o &ldquo;acima&rdquo;.</li>
+      <li><b>Identificador estável.</b> Não renomear arquivo; regra que muda ganha <code>supera:</code> em vez de sobrescrever. Renomeação quebra a rastreabilidade dos SHAs guardados no histórico.</li>
+      <li><b><code>INDEX.md</code> gerado.</b> Índice escrito à mão desatualiza em duas semanas e passa a mentir para o agente.</li>
+    </ul>
+
+    <div class="say">
+      <span class="eyebrow">Como explicar em uma frase</span>
+      <p>&ldquo;A parte cara de um RAG é ter conteúdo confiável e organizado &mdash; isso a base já é. O índice é de duas a quatro semanas, e só vale a pena quando a busca atual falhar de um jeito que a gente consiga mostrar.&rdquo;</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">09 &middot; Ordem</span>
+    <h2>O que fazer primeiro</h2>
+    <p class="lede">Cada item só começa depois que o anterior deu certo. A ordem é deliberada: os dois primeiros podem matar a iniciativa e custam um dia.</p>
+  </div>
+  <div class="ladder col">
+    <div class="rung"><div><b>Verificar a política da organização</b><p>Copilot Spaces, chat em github.com e instalação do Copilot app. Se o app não for liberado, o canvas sai do desenho e o handoff volta a ser manual &mdash; melhor saber agora.</p></div><span class="pill no">1 dia</span></div>
+    <div class="rung"><div><b>Confirmar a restrição de <code>.github/</code></b><p>É por repositório de produto ou da organização inteira? Define se o workflow empurra do produto ou o conhecimento puxa, e se as skills usam <code>.agents/skills/</code>.</p></div><span class="pill no">1 dia</span></div>
+    <div class="rung"><div><b>Criar o repositório e semear à mão</b><p>Estrutura tribo/squad, CODEOWNERS, e o glossário do cockpit escrito por você e o PO. Sem automação nenhuma ainda.</p></div><span class="pill humano">1 semana</span></div>
+    <div class="rung"><div><b>Rodar o piloto com 3 demandas reais</b><p>Quatro agentes versionados no repositório, sem canvas e sem CI. O que se mede aqui é se o agente citou regra correta &mdash; não se o fluxo é bonito.</p></div><span class="pill humano">1 sprint</span></div>
+    <div class="rung"><div><b>Negociar a distribuição no nível da organização</b><p>Publicar os agentes em <code>/agents/</code> no repo <code>.github</code> da organização. Enquanto isso não sai, cada PO usa a versão do repositório de conhecimento &mdash; nunca uma cópia na pasta pessoal.</p></div><span class="pill humano">em paralelo</span></div>
+    <div class="rung"><div><b>Ligar o inventário e a curadoria</b><p>Graphify gerando o <code>INVENTARIO.md</code>, agente curador com a <code>inbox/</code>. A base cresce por demanda real, não por meta de cobertura.</p></div><span class="pill auto">2 sprints</span></div>
+    <div class="rung"><div><b>Automatizar a publicação a partir de PROD</b><p>Aqui entra o time de workflows, com o contrato da seção 03 na mão. Antes disso, eles não têm requisito estável para trabalhar.</p></div><span class="pill auto">a combinar</span></div>
+  </div>
+  <div class="col stack" style="margin-top:1.4rem">
+    <div class="pull">
+      <span class="eyebrow">O erro mais provável</span>
+      Começar pelo workflow. É a parte mais divertida de construir e a que menos ensina. Se a base semeada à mão não responder às perguntas do PO no piloto, automatizar a publicação só vai encher mais rápido uma base que ninguém consulta.
+    </div>
+  </div>
+</section>
+
+<footer class="col">
+  <p>Manual de operação &middot; complementa a proposta de arquitetura da base viva. Fontes técnicas: documentação do GitHub sobre agent skills (caminhos <code>.github/skills</code>, <code>.claude/skills</code>, <code>.agents/skills</code>, <code>~/.copilot/skills</code> e formato do SKILL.md), canvas extensions no Copilot app (<code>/create-canvas</code>, <code>.github/extensions</code>), custom agents (<code>.agent.md</code> em <code>.github/agents/</code> e <code>~/.copilot/agents/</code>, com <code>tools</code> e <code>mcp-servers</code>, e distribuição em nível de organização) e o anúncio do Copilot app como experiência desktop.</p>
+</footer>
+
+</div>
+</body>
+</html>

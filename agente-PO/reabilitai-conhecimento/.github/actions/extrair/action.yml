@@ -1,0 +1,29 @@
+# Action reutilizável, versionada AQUI e não no repositório de produto.
+# Assim uma correção no extrator não exige PR em cinco repositórios de squad.
+name: extrair-conhecimento
+description: Extrai artefatos de negócio do repo de produto e abre PR na base de conhecimento
+
+inputs:
+  produto:    { description: slug do produto, required: true }
+  prateleira: { description: 'publicado ou em-voo', required: true }
+  release:    { description: SHA ou tag que está no ambiente, required: true }
+  token:      { description: token do GitHub App com permissão de PR na base, required: true }
+  allowlist:  { description: caminhos permitidos, um por linha, required: true }
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+        echo "::group::Extraindo ${{ inputs.produto }} → ${{ inputs.prateleira }}"
+        # TODO(time de workflows): implementar o extrator.
+        # Requisitos que não podem ser negociados:
+        #  - só copia o que casa com a allowlist;
+        #  - grava release/SHA no frontmatter de cada arquivo gerado;
+        #  - IDEMPOTÊNCIA: se o conteúdo gerado for idêntico ao publicado, NÃO abre PR;
+        #  - branch fixa por produto (sync/${{ inputs.produto }}), com force-push,
+        #    para não acumular dezenas de PRs abertos;
+        #  - corpo do PR com release, SHA, data-hora e lista de arquivos afetados;
+        #  - falha aqui alerta o canal do time e NÃO reverte nem bloqueia o deploy.
+        echo "::endgroup::"

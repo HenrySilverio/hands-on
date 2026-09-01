@@ -1,0 +1,71 @@
+# ATENÇÃO: este arquivo NÃO roda aqui. É o modelo para o time de workflows copiar
+# para o repositório de PRODUTO. Duas coisas o tornam correto:
+#   1. o gatilho é DEPLOY EM PRODUÇÃO, não merge em main;
+#   2. ele nunca bloqueia a esteira de entrega.
+
+name: publica-base-conhecimento
+
+on:
+  deployment_status: {}      # deploy concluído
+  push: { branches: [main] } # alimenta apenas a prateleira em-voo
+  workflow_dispatch: {}      # backfill manual
+
+jobs:
+  publicado:
+    # só quando o deploy foi de PRODUÇÃO e deu certo
+    if: >
+      github.event_name == 'deployment_status' &&
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment_status.environment == 'production'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: '${{ github.event.deployment.sha }}' }
+
+      # App instalado nos dois repositórios. NUNCA um PAT pessoal:
+      # some quando a pessoa muda de área e ninguém sabe rotacionar.
+      - id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BASE_APP_ID }}
+          private-key: ${{ secrets.BASE_APP_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: reabilitai-conhecimento
+
+      - uses: org/reabilitai-conhecimento/.github/actions/extrair@v1
+        with:
+          produto: cockpit-renegociacao
+          prateleira: publicado
+          release: ${{ github.event.deployment.sha }}
+          token: ${{ steps.token.outputs.token }}
+          # Allowlist explícita. NUNCA blocklist: blocklist vaza no dia em que
+          # alguém cria uma pasta nova.
+          allowlist: |
+            specs/**
+            e2e/**/*.feature
+            src/**/i18n/*.json
+            .sdd/decisoes/**
+
+  em-voo:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BASE_APP_ID }}
+          private-key: ${{ secrets.BASE_APP_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: reabilitai-conhecimento
+      - uses: org/reabilitai-conhecimento/.github/actions/extrair@v1
+        with:
+          produto: cockpit-renegociacao
+          prateleira: em-voo
+          release: ${{ github.sha }}
+          token: ${{ steps.token.outputs.token }}
+          allowlist: |
+            specs/**
+            e2e/**/*.feature
+            src/**/i18n/*.json
+            .sdd/decisoes/**

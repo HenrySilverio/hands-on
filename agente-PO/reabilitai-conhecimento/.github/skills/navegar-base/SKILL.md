@@ -1,0 +1,41 @@
+---
+name: navegar-base
+description: Como encontrar informação no repositório de conhecimento da tribo ReabilitAI sem ler
+  a base inteira, e quais pastas nunca devem ser usadas como fonte de regra vigente. Use antes de
+  qualquer consulta à base.
+---
+
+# Navegar a base
+
+## Ordem de leitura
+
+1. `INDEX.md` na raiz — mapa de produtos e domínios. **Sempre primeiro.** Ele é gerado; se
+   estiver desatualizado, é bug do gerador, não motivo para varrer o repositório.
+2. `tribo/glossario.md` — quando o termo da pergunta for ambíguo.
+3. O arquivo específico apontado pelo índice.
+
+Não faça varredura ampla. A base é escrita em arquivos curtos por assunto justamente para que a
+resposta esteja em um ou dois arquivos.
+
+## O que cada prateleira significa
+
+| Pasta | Significa | Pode citar como |
+| --- | --- | --- |
+| `publicado/` | está em PRODUÇÃO agora | regra vigente |
+| `em-voo/` | mergeado, ainda não publicado | "muda na próxima release" |
+| `decisoes/` com `status: vigente` | decisão de negócio em vigor | decisão |
+| `decisoes/` com `status: superada` | histórico | apenas contexto |
+| `historico/` | stories entregues | **nunca** como regra |
+| `inbox/` | matéria-prima não revisada | **nunca** |
+
+## Como citar
+
+Sempre o caminho completo do arquivo. Quando o arquivo tiver `sha` ou `release` no frontmatter,
+inclua. Exemplo: `squads/cockpit-renegociacao/publicado/regras-negocio.md@a3f21c9`.
+
+Citação sem caminho não vale. Se você não consegue apontar o arquivo, você não sabe — diga isso.
+
+## Quando a base não cobre
+
+Responda "a base não cobre isto" e diga qual pasta deveria cobrir. Isso alimenta o ritual de
+curadoria da sprint e é mais valioso que um palpite bem escrito.

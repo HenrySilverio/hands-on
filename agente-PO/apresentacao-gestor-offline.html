@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Proposta: assistente de discovery com base de conhecimento viva para a tribo ReabilitAI.">
+<title>Assistente de Discovery ReabilitAI</title>
+<style>
+:root{
+  --paper:#F7F5F1;--surface:#FFFFFF;--surface-2:#EFEBE4;
+  --ink:#171A19;--ink-2:#525755;--ink-3:#7B807D;
+  --rule:#DDD8CE;--rule-strong:#BFB8AA;
+  --brand:#1B5468;--brand-soft:#E2EBEF;
+  --ask:#8A6410;--ask-soft:#F3EAD4;
+  --ok:#3B6B48;--ok-soft:#E4EFE6;
+  --risk:#9E3B2C;
+  --shadow:0 1px 2px rgba(23,26,25,.05),0 10px 28px -14px rgba(23,26,25,.2);
+  --f-display:"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-body:Cambria,Georgia,"Times New Roman",serif;
+  --f-mono:"Cascadia Mono",Consolas,ui-monospace,"Courier New",monospace;
+  --measure:62ch;--pad:clamp(1.2rem,4vw,2.5rem);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#131718;--surface:#1B2022;--surface-2:#222829;
+    --ink:#ECE9E3;--ink-2:#A8ADAB;--ink-3:#808886;
+    --rule:#2D3436;--rule-strong:#404A4C;
+    --brand:#77B7CD;--brand-soft:#16333E;
+    --ask:#D8AE55;--ask-soft:#332A11;
+    --ok:#84C094;--ok-soft:#182B1D;
+    --risk:#E08373;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.65);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#131718;--surface:#1B2022;--surface-2:#222829;
+  --ink:#ECE9E3;--ink-2:#A8ADAB;--ink-3:#808886;
+  --rule:#2D3436;--rule-strong:#404A4C;
+  --brand:#77B7CD;--brand-soft:#16333E;
+  --ask:#D8AE55;--ask-soft:#332A11;
+  --ok:#84C094;--ok-soft:#182B1D;
+  --risk:#E08373;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.65);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);
+  font-size:clamp(1.04rem,1rem + .22vw,1.14rem);line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:calc(var(--measure) + 13rem);margin:0 auto;padding:0 var(--pad) 5rem}
+.col{max-width:var(--measure)}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:600;line-height:1.12;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.3rem,1.6rem + 3.4vw,4rem);letter-spacing:-.024em;font-weight:700}
+h2{font-size:clamp(1.55rem,1.3rem + 1.3vw,2.25rem);letter-spacing:-.018em}
+h3{font-size:clamp(1.1rem,1.04rem + .4vw,1.3rem);letter-spacing:-.008em}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.71rem;font-weight:500;text-transform:uppercase;
+  letter-spacing:.15em;color:var(--ink-3)}
+
+header.hero{padding:clamp(3rem,8vw,6rem) 0 clamp(2.2rem,5vw,3.4rem);border-bottom:1px solid var(--rule)}
+.hero .col{display:flex;flex-direction:column;gap:1.3rem}
+.thesis{font-size:clamp(1.15rem,1.05rem + .5vw,1.42rem);color:var(--ink-2);line-height:1.5}
+.askline{display:inline-flex;align-items:center;gap:.55rem;align-self:flex-start;
+  font-family:var(--f-mono);font-size:.72rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ask);background:var(--ask-soft);border:1px solid var(--ask);border-radius:3px;padding:.4rem .7rem}
+
+section{padding:clamp(2.6rem,6vw,4rem) 0;border-bottom:1px solid var(--rule)}
+section:last-of-type{border-bottom:0}
+.sec-head{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.6rem}
+.stack{display:flex;flex-direction:column;gap:1.05rem}
+
+.big{font-size:clamp(1.1rem,1.02rem + .4vw,1.3rem);line-height:1.5}
+.quiet{color:var(--ink-2)}
+
+.journey{display:flex;flex-direction:column;gap:0;counter-reset:j}
+.leg{display:grid;grid-template-columns:2.6rem 1fr;gap:1.3rem;padding:1.35rem 0;border-top:1px solid var(--rule)}
+.leg:last-child{border-bottom:1px solid var(--rule)}
+.leg::before{counter-increment:j;content:counter(j);font-family:var(--f-display);font-weight:700;
+  font-size:1.5rem;color:var(--brand);line-height:1.1}
+.leg h3{margin-bottom:.35rem}
+.leg p{font-size:1rem;color:var(--ink-2);line-height:1.55}
+.leg .who{display:inline-block;margin-top:.55rem;font-family:var(--f-mono);font-size:.68rem;
+  text-transform:uppercase;letter-spacing:.09em;color:var(--ink-3)}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:.94rem}
+th,td{text-align:left;padding:.8rem .95rem;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.5}
+thead th{font-family:var(--f-mono);font-size:.68rem;font-weight:600;text-transform:uppercase;
+  letter-spacing:.09em;color:var(--ink-3);background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:0}
+td.k{font-family:var(--f-display);font-weight:600;color:var(--ink);white-space:nowrap}
+.hoje{color:var(--ink-2)}
+.depois{color:var(--ink)}
+
+ul.check{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.7rem}
+ul.check li{padding-left:1.6rem;position:relative;line-height:1.55;font-size:1rem}
+ul.check li::before{content:"";position:absolute;left:0;top:.5em;width:.62rem;height:.62rem;
+  border:2px solid var(--ok);border-radius:2px}
+ul.check li b{font-weight:600}
+ul.plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.55rem}
+ul.plain li{padding-left:1.1rem;position:relative;color:var(--ink-2);font-size:1rem;line-height:1.55}
+ul.plain li::before{content:"";position:absolute;left:0;top:.62em;width:.4rem;height:.4rem;
+  background:var(--rule-strong);border-radius:50%}
+ul.plain li b{color:var(--ink)}
+
+.asks{display:flex;flex-direction:column;gap:.6rem}
+.ask{display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:start;
+  background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--ask);
+  border-radius:0 6px 6px 0;padding:1rem 1.15rem;box-shadow:var(--shadow)}
+.ask h4{font-family:var(--f-display);font-size:1.02rem;margin-bottom:.25rem}
+.ask p{font-size:.94rem;color:var(--ink-2);line-height:1.5}
+.ask .cost{font-family:var(--f-mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--ask);background:var(--ask-soft);padding:.28rem .5rem;border-radius:3px;white-space:nowrap}
+
+.cards{display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:1.05rem 1.1rem;
+  display:flex;flex-direction:column;gap:.4rem;box-shadow:var(--shadow)}
+.card .n{font-family:var(--f-display);font-size:1.5rem;font-weight:700;color:var(--brand);line-height:1}
+.card h4{font-size:1rem}
+.card p{font-size:.92rem;color:var(--ink-2);line-height:1.5}
+
+.callout{border-left:3px solid var(--brand);background:var(--brand-soft);padding:1.1rem 1.3rem;border-radius:0 6px 6px 0}
+.callout .eyebrow{color:var(--brand);display:block;margin-bottom:.35rem}
+.callout p{font-size:1.04rem}
+.decision{background:var(--surface);border:2px solid var(--brand);border-radius:6px;padding:1.4rem 1.5rem;
+  display:flex;flex-direction:column;gap:.6rem;box-shadow:var(--shadow)}
+.decision h3{color:var(--brand)}
+
+footer{padding:2.4rem 0 0;border-top:1px solid var(--rule);color:var(--ink-3);font-size:.88rem}
+a{color:var(--brand);text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+.theme-toggle{position:fixed;top:.9rem;right:.9rem;z-index:50;font-family:var(--f-mono);
+  font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--rule-strong);border-radius:3px;
+  padding:.42rem .6rem;cursor:pointer;box-shadow:var(--shadow)}
+.theme-toggle:hover{color:var(--ink);border-color:var(--ink-3)}
+@media print{
+  :root,:root[data-theme="dark"]{
+    --paper:#FFFFFF;--surface:#FFFFFF;--surface-2:#F2EFE9;
+    --ink:#101312;--ink-2:#3A3E3C;--ink-3:#696F6C;
+    --rule:#CFC9BD;--rule-strong:#A9A296;
+    --brand:#123F50;--brand-soft:#EAF1F4;--ask:#6E4E08;--ask-soft:#F5EEDB;
+    --ok:#2F5A3B;--ok-soft:#EAF2EC;--risk:#8A2E20;--shadow:none;}
+  body{background:#fff;font-size:11pt}
+  .theme-toggle{display:none}
+  .wrap{max-width:none;padding:0}
+  section{padding:1.5rem 0}
+  .card,.leg,.ask,.callout,.decision,.tablewrap{break-inside:avoid}
+  h1,h2,h3{break-after:avoid}
+  header.hero{padding-top:0}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" type="button" id="tt" aria-label="Alternar tema claro e escuro">Tema</button>
+<script>
+(function(){
+  var root=document.documentElement,btn=document.getElementById('tt'),saved=null;
+  try{saved=localStorage.getItem('rai-tema')}catch(e){}
+  if(saved){root.setAttribute('data-theme',saved)}
+  btn.addEventListener('click',function(){
+    var dark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var atual=root.getAttribute('data-theme')||(dark?'dark':'light');
+    var novo=atual==='dark'?'light':'dark';
+    root.setAttribute('data-theme',novo);
+    try{localStorage.setItem('rai-tema',novo)}catch(e){}
+  });
+})();
+</script>
+<div class="wrap">
+
+<header class="hero">
+  <div class="col">
+    <span class="eyebrow">Tribo ReabilitAI &middot; Proposta para decisão</span>
+    <h1>Um assistente de discovery que já leu o produto</h1>
+    <p class="thesis">Hoje o conhecimento do nosso produto está no código, na cabeça das pessoas e em documentos desatualizados. A proposta é reunir isso num lugar que se atualiza sozinho a cada entrega, e dar ao PO um assistente que só responde com base nele.</p>
+    <span class="askline">Peço aprovação de um piloto de uma sprint</span>
+  </div>
+</header>
+
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">O problema</span>
+    <h2>A conta que pagamos hoje sem perceber</h2>
+  </div>
+  <div class="col stack">
+    <p class="big">Quando o PO precisa saber como uma regra funciona, ele pergunta a um desenvolvedor. O desenvolvedor para o que está fazendo, procura no código e responde. Isso acontece várias vezes por semana, e ninguém contabiliza.</p>
+    <p class="quiet">O custo maior aparece depois. Uma user story escrita sem essa informação chega ao refinamento com premissa errada, volta para o PO, e a demanda atravessa a sprint. O problema nunca foi a escrita da story &mdash; é a ambiguidade sobre a regra de negócio.</p>
+    <div class="callout">
+      <span class="eyebrow">Por que uma wiki não resolve</span>
+      <p>Já tentamos documentar. Documentação atualizada por boa vontade envelhece em semanas, e uma base errada é pior que base nenhuma: as pessoas confiam nela. A diferença desta proposta é que a atualização acontece <strong>automaticamente, quando a entrega chega em produção</strong> &mdash; ninguém precisa lembrar.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">A solução</span>
+    <h2>Três peças, explicadas sem jargão</h2>
+  </div>
+  <div class="cards">
+    <div class="card">
+      <span class="n">1</span>
+      <h4>Uma base viva do produto</h4>
+      <p>Regras de negócio, decisões e o vocabulário do domínio, num lugar só. Atualiza sozinha quando o time entrega em produção.</p>
+    </div>
+    <div class="card">
+      <span class="n">2</span>
+      <h4>Assistentes para o PO</h4>
+      <p>Quatro assistentes especializados: iniciar o discovery, confrontar com as regras existentes, escrever a story e organizar documentos externos.</p>
+    </div>
+    <div class="card">
+      <span class="n">3</span>
+      <h4>Histórico auditável</h4>
+      <p>Toda story entregue fica guardada com a foto da regra que estava valendo quando foi escrita.</p>
+    </div>
+  </div>
+  <div class="col stack" style="margin-top:1.5rem">
+    <div class="callout">
+      <span class="eyebrow">A regra que dá confiabilidade</span>
+      <p>Os assistentes são proibidos de completar o que não sabem. Quando falta informação, eles marcam a lacuna e param, em vez de inventar um critério de aceite que parece correto. É essa restrição que separa a ferramenta de um gerador de texto plausível.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">A jornada</span>
+    <h2>Do zero ao uso, em cinco etapas</h2>
+  </div>
+  <div class="journey col">
+    <div class="leg">
+      <div>
+        <h3>Preparar o acesso</h3>
+        <p>Ninguém compra nada. Os PMs e POs já têm a licença do GitHub Copilot que a solução usa; quem ainda não tem, solicita pelo caminho normal. Quem só vai consultar usa o navegador, sem instalar nada. Quem conduz o discovery de ponta a ponta instala um aplicativo, pelo processo padrão de liberação de software.</p>
+        <span class="who">1 semana &middot; depende de confirmação de política</span>
+      </div>
+    </div>
+    <div class="leg">
+      <div>
+        <h3>Primeira carga da base</h3>
+        <p>Um PO e um desenvolvedor escrevem juntos o essencial de um produto: o glossário do domínio e as regras que mais geram dúvida. Não é um projeto de documentação &mdash; é escrever as respostas das perguntas que o PO já fez no último mês.</p>
+        <span class="who">1 semana &middot; 1 PO + 1 desenvolvedor</span>
+      </div>
+    </div>
+    <div class="leg">
+      <div>
+        <h3>Uso no dia a dia</h3>
+        <p>O PO abre o assistente, descreve a demanda e responde às perguntas dele. O assistente compara com o que já existe e aponta conflito com regra vigente. No fim, a story sai pronta para o Jira, com cada critério de aceite ligado à sua origem.</p>
+        <span class="who">contínuo &middot; o PO, sozinho</span>
+      </div>
+    </div>
+    <div class="leg">
+      <div>
+        <h3>Atualização automática</h3>
+        <p>Quando uma entrega chega em produção, a base se atualiza sem intervenção. Uma vez por sprint, um PO e um desenvolvedor gastam 30 minutos conferindo o que mudou &mdash; a única parte manual, e a que garante que a base não vire folclore.</p>
+        <span class="who">automático + 30 min por sprint</span>
+      </div>
+    </div>
+    <div class="leg">
+      <div>
+        <h3>Registro e histórico</h3>
+        <p>Decisões de negócio tomadas em reunião passam a ter lugar fixo, com data e quem decidiu. Documentos externos &mdash; norma do Bacen, política de crédito, ata do Teams &mdash; entram pela mesma porta, sempre com a citação e o link da fonte.</p>
+        <span class="who">contínuo &middot; PO e negócio</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">Impacto</span>
+    <h2>O que muda na prática</h2>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Situação</th><th>Hoje</th><th>Com a base viva</th></tr></thead>
+      <tbody>
+        <tr><td class="k">Dúvida sobre uma regra</td><td class="hoje">PO interrompe um desenvolvedor; resposta em horas</td><td class="depois">PO pergunta ao assistente; resposta em segundos, com a origem</td></tr>
+        <tr><td class="k">Story ambígua</td><td class="hoje">descoberta no refinamento, volta para o PO</td><td class="depois">lacuna aparece antes de a story ser escrita</td></tr>
+        <tr><td class="k">Decisão de reunião</td><td class="hoje">vira ata que ninguém reencontra</td><td class="depois">vira registro consultável, com data e responsável</td></tr>
+        <tr><td class="k">Auditoria de comportamento</td><td class="hoje">arqueologia em código e tickets antigos</td><td class="depois">story guardada com a regra que valia na época</td></tr>
+        <tr><td class="k">PO novo na squad</td><td class="hoje">semanas de perguntas para o time</td><td class="depois">pergunta ao assistente desde o primeiro dia</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">Entrega</span>
+    <h2>O que fica pronto ao fim do piloto</h2>
+  </div>
+  <div class="col stack">
+    <ul class="check">
+      <li><b>Base de conhecimento do cockpit</b> &mdash; glossário e regras principais, num repositório da tribo com dono definido.</li>
+      <li><b>Quatro assistentes configurados</b> &mdash; discovery, refinamento, escrita da story e organização de documentos.</li>
+      <li><b>Evidência de uso real</b> &mdash; três demandas conduzidas de ponta a ponta, com o resultado medido.</li>
+      <li><b>Estrutura pronta para as outras squads</b> &mdash; a separação entre regra geral da tribo e regra de cada produto já desenhada e testada.</li>
+      <li><b>Decisão fundamentada sobre continuar</b> &mdash; com números, não com impressão.</li>
+    </ul>
+    <p class="quiet">Fora do escopo do piloto, por escolha: automação da atualização, integração com Jira e ferramenta de busca própria. Todas essas só fazem sentido depois que a base provar que responde às perguntas reais &mdash; automatizar antes disso é encher mais rápido uma base que ninguém consulta.</p>
+  </div>
+</section>
+
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">O que preciso</span>
+    <h2>Cinco pedidos, nenhum deles orçamento</h2>
+  </div>
+  <div class="asks col">
+    <div class="ask">
+      <div><h4>Confirmar a política de uso do Copilot</h4><p>Precisamos saber se os recursos que a solução usa estão liberados pela política da organização. É uma verificação rápida, e ela decide o desenho.</p></div>
+      <span class="cost">1 dia</span>
+    </div>
+    <div class="ask">
+      <div><h4>Um repositório da tribo e dois administradores</h4><p>A base precisa de dono institucional, não pessoal. Dois nomes para que a solução não dependa de uma pessoa só.</p></div>
+      <span class="cost">decisão</span>
+    </div>
+    <div class="ask">
+      <div><h4>Dois POs no piloto por uma sprint</h4><p>Conduzindo demandas reais, não exercício. Sem demanda real o piloto não prova nada.</p></div>
+      <span class="cost">1 sprint</span>
+    </div>
+    <div class="ask">
+      <div><h4>Trinta minutos por sprint, de forma permanente</h4><p>Um PO e um desenvolvedor conferindo o que entrou na base. É o item mais barato da lista e o único que, se cair, faz a solução apodrecer.</p></div>
+      <span class="cost">30 min/sprint</span>
+    </div>
+    <div class="ask">
+      <div><h4>Apoio em duas conversas</h4><p>Com segurança da informação, sobre publicar regra de negócio no repositório; e com quem administra o GitHub da organização, sobre distribuir os assistentes para todos.</p></div>
+      <span class="cost">apadrinhamento</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">Custo</span>
+    <h2>Onde entra dinheiro e onde entra tempo</h2>
+  </div>
+  <div class="col stack">
+    <p class="big"><strong>Nenhuma licença nova.</strong> A solução usa o GitHub Copilot que a tribo já contrata e o GitHub que já usamos. Não há ferramenta a comprar, contrato a assinar nem fornecedor a homologar.</p>
+    <p class="quiet">O investimento é tempo de gente, e ele é pequeno na frente: cerca de duas semanas de esforço combinado entre eu e um PO para o piloto, mais os 30 minutos por sprint que se tornam permanentes. Se o piloto não convencer, paramos tendo gasto duas semanas e ficamos com a base escrita &mdash; que continua útil por si só.</p>
+    <div class="callout">
+      <span class="eyebrow">Sobre o passo seguinte</span>
+      <p>Se a solução se provar, o passo natural é uma ferramenta de busca própria sobre essa base, que serviria também a outros assistentes do banco. O trabalho estimado é de duas a quatro semanas de uma pessoa &mdash; e a parte cara desse projeto, que é ter conteúdo confiável e organizado, já estará feita pelo piloto. Não é compromisso agora; é o caminho que esta decisão mantém aberto.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">Riscos</span>
+    <h2>O que pode dar errado, e o que fazemos</h2>
+  </div>
+  <div class="col stack">
+    <ul class="plain">
+      <li><b>A política da organização pode bloquear os recursos.</b> Por isso é o primeiro item da lista e custa um dia. Se bloquear, ajustamos o desenho antes de investir qualquer tempo.</li>
+      <li><b>A base pode ficar desatualizada.</b> É o modo de falha de toda documentação. Atacamos com atualização automática a partir da entrega em produção, mais os 30 minutos de conferência por sprint.</li>
+      <li><b>O assistente pode afirmar algo errado.</b> Por isso ele é obrigado a citar de onde tirou cada afirmação e proibido de preencher lacuna. Resposta sem fonte é sinal de que a base não cobre o assunto &mdash; e isso é informação útil, não falha.</li>
+      <li><b>Documento externo pode trazer dado sensível.</b> Toda entrada passa por revisão humana antes de virar parte da base, com conferência de dado pessoal.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="col sec-head">
+    <span class="eyebrow">Medição</span>
+    <h2>Como saberemos se funcionou</h2>
+  </div>
+  <div class="col stack">
+    <ul class="plain">
+      <li><b>Quantas stories voltam no refinamento.</b> É a métrica principal: mede ambiguidade, que é o problema real.</li>
+      <li><b>Quantas vezes o PO precisou interromper um desenvolvedor</b> para saber uma regra.</li>
+      <li><b>Quanto tempo a base leva</b> para refletir uma entrega que chegou em produção.</li>
+    </ul>
+    <p class="quiet">Uma métrica que <strong>não</strong> vamos usar: número de stories geradas. Ela faz todo mundo gerar story, e volume não é o objetivo.</p>
+    <div class="decision" style="margin-top:.6rem">
+      <h3>A decisão que peço</h3>
+      <p>Aprovar um piloto de uma sprint, com dois POs e três demandas reais, para responder uma pergunta objetiva: o assistente cita a regra correta quando o PO pergunta? Se a resposta for não, encerramos com duas semanas investidas e a base escrita. Se for sim, volto com números para discutir a expansão para as demais squads da tribo.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="col">
+  <p>Tribo ReabilitAI &middot; squad do cockpit de renegociação. O detalhamento técnico da arquitetura, do fluxo de atualização e da estrutura do repositório está em documento separado, à disposição.</p>
+</footer>
+
+</div>
+</body>
+</html>
