@@ -1,0 +1,16 @@
+# Cada camada tem dono. Sem isso, todo squad vira revisor do conteúdo dos outros.
+# Ajuste os times antes de usar.
+
+*                                       @org/tribo-reabilitai-admins
+
+/tribo/                                 @org/reabilitai-negocio @org/tribo-reabilitai-admins
+/tribo/externas/                        @org/reabilitai-negocio @org/reabilitai-compliance
+
+/squads/cockpit-renegociacao/           @org/squad-cockpit
+/squads/cockpit-renegociacao/publicado/ @org/squad-cockpit-devs
+/squads/cockpit-renegociacao/em-voo/    @org/squad-cockpit-devs
+
+/.github/agents/                        @org/tribo-reabilitai-admins
+/.github/skills/                        @org/tribo-reabilitai-admins
+/.github/workflows/                     @org/tribo-reabilitai-admins
+/ferramentas/                           @org/tribo-reabilitai-admins

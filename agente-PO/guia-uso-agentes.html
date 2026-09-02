@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guia dos Assistentes de Discovery</title>
+<style>
+:root{
+  --paper:#F7F5F1;--surface:#FFFFFF;--surface-2:#EFEBE4;
+  --ink:#171A19;--ink-2:#4F5452;--ink-3:#797E7C;
+  --rule:#DDD8CE;--rule-strong:#BFB8AA;
+  --brand:#1B5468;--brand-soft:#E3ECEF;
+  --warn:#8A6410;--warn-soft:#F3EAD4;
+  --shadow:0 1px 2px rgba(23,26,25,.05),0 8px 24px -14px rgba(23,26,25,.18);
+  --f-display:"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  --f-body:Cambria,Georgia,"Times New Roman",serif;
+  --f-mono:"Cascadia Mono",Consolas,ui-monospace,"Courier New",monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#131718;--surface:#1B2022;--surface-2:#222829;
+  --ink:#ECE9E3;--ink-2:#A5ABA9;--ink-3:#7F8785;
+  --rule:#2D3436;--rule-strong:#404A4C;
+  --brand:#77B7CD;--brand-soft:#16323E;
+  --warn:#D8AE55;--warn-soft:#332A11;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -14px rgba(0,0,0,.6);}}
+:root[data-theme="dark"]{
+  --paper:#131718;--surface:#1B2022;--surface-2:#222829;
+  --ink:#ECE9E3;--ink-2:#A5ABA9;--ink-3:#7F8785;
+  --rule:#2D3436;--rule-strong:#404A4C;
+  --brand:#77B7CD;--brand-soft:#16323E;
+  --warn:#D8AE55;--warn-soft:#332A11;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -14px rgba(0,0,0,.6);}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);
+  font-size:16.5px;line-height:1.65;-webkit-font-smoothing:antialiased}
+main{max-width:78ch;margin:0 auto;padding:2.6rem 1.4rem 5rem}
+h1,h2,h3,h4{font-family:var(--f-display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:2.15rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.8rem}
+h2{font-size:1.5rem;font-weight:600;letter-spacing:-.014em;margin:2.6rem 0 .9rem;
+  padding-top:1.4rem;border-top:1px solid var(--rule)}
+h3{font-size:1.15rem;font-weight:600;margin:1.8rem 0 .5rem;color:var(--brand)}
+h4{font-size:1rem;font-weight:600;margin:1.2rem 0 .35rem}
+p{margin:0 0 .9rem}
+ul,ol{margin:0 0 1rem;padding-left:1.4rem}
+li{margin-bottom:.4rem}
+li>ul,li>ol{margin-top:.4rem}
+strong{font-weight:600}
+hr{border:0;border-top:1px solid var(--rule);margin:2.2rem 0}
+a{color:var(--brand);text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+code{font-family:var(--f-mono);font-size:.85em;background:var(--surface-2);
+  border:1px solid var(--rule);padding:.08em .34em;border-radius:3px}
+pre{background:var(--surface-2);border:1px solid var(--rule);border-radius:5px;
+  padding:.95rem 1.05rem;overflow-x:auto;margin:0 0 1.1rem;box-shadow:var(--shadow)}
+pre code{background:none;border:0;padding:0;font-size:.78rem;line-height:1.65;color:var(--ink-2)}
+blockquote{margin:0 0 1.1rem;padding:.85rem 1.1rem;border-left:3px solid var(--warn);
+  background:var(--warn-soft);border-radius:0 5px 5px 0}
+blockquote p{margin:0}
+table{border-collapse:collapse;width:100%;font-size:.92rem;margin:0}
+.tw{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--surface);
+  box-shadow:var(--shadow);margin:0 0 1.2rem}
+th,td{text-align:left;padding:.62rem .8rem;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.5}
+thead th{font-family:var(--f-mono);font-size:.68rem;font-weight:600;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--ink-3);background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:0}
+.tt{position:fixed;top:.9rem;right:.9rem;z-index:50;font-family:var(--f-mono);font-size:.66rem;
+  font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--rule-strong);border-radius:3px;
+  padding:.4rem .58rem;cursor:pointer;box-shadow:var(--shadow)}
+.tt:hover{color:var(--ink)}
+@media print{
+  :root,:root[data-theme="dark"]{--paper:#fff;--surface:#fff;--surface-2:#F2EFE9;
+    --ink:#111;--ink-2:#3A3E3C;--ink-3:#696F6C;--rule:#CFC9BD;--rule-strong:#A9A296;
+    --brand:#123F50;--brand-soft:#EAF1F4;--warn:#6E4E08;--warn-soft:#F5EEDB;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .tt{display:none} main{max-width:none;padding:0}
+  pre,blockquote,.tw{break-inside:avoid} h1,h2,h3{break-after:avoid}
+  pre code{font-size:8.5pt} a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<button class="tt" id="tt" type="button" aria-label="Alternar tema">Tema</button>
+<script>(function(){var r=document.documentElement,b=document.getElementById('tt'),s=null;
+try{s=localStorage.getItem('kb-tema')}catch(e){}if(s)r.setAttribute('data-theme',s);
+b.addEventListener('click',function(){var d=matchMedia('(prefers-color-scheme: dark)').matches;
+var a=r.getAttribute('data-theme')||(d?'dark':'light'),n=a==='dark'?'light':'dark';
+r.setAttribute('data-theme',n);try{localStorage.setItem('kb-tema',n)}catch(e){}});})();</script>
+<main>
+<h1>Guia de uso dos assistentes de discovery</h1>
+<p>Para PO, PM e PMO da tribo ReabilitAI. Nenhum conhecimento técnico é necessário.</p>
+<hr />
+<h2>O que são esses assistentes</h2>
+<p>São quatro assistentes que conhecem as regras do nosso produto porque leem uma base mantida pelo
+time. Eles ajudam a transformar uma necessidade de negócio em uma user story bem fundamentada.</p>
+<p>Eles têm uma característica que parece um defeito e é o principal recurso: <strong>eles não completam o
+que não sabem.</strong> Quando falta informação, param e perguntam. Um assistente comum inventaria um
+critério de aceite que parece certo — e você só descobriria o erro na sprint seguinte.</p>
+<hr />
+<h2>Antes de começar</h2>
+<p>Você precisa de:</p>
+<ul>
+<li>Licença do GitHub Copilot (se não tem, solicite pelo caminho normal).</li>
+<li>O <strong>GitHub Copilot app</strong> instalado, se você vai conduzir o discovery de ponta a ponta.</li>
+<li>Só quer tirar dúvida sobre uma regra? Não precisa instalar nada: use o Space pelo navegador.</li>
+</ul>
+<p>Abra o app e inicie uma sessão apontando para o repositório <strong>recr-cmn-tribo-knowledge</strong>. Os
+quatro assistentes aparecem sozinhos.</p>
+<hr />
+<h2>Os quatro assistentes</h2>
+<h3>1. <code>po-iniciar-discovery</code> — da necessidade ao briefing</h3>
+<p><strong>Quando usar:</strong> a demanda ainda é uma ideia, um pedido do gerente, um chamado ou uma ata. Não
+existe nada escrito ainda.</p>
+<p><strong>Como funciona:</strong> ele entrevista você em rodadas curtas, no máximo três perguntas por vez, e a
+cada rodada devolve o que entendeu para você corrigir cedo.</p>
+<p><strong>O que você recebe:</strong> um briefing com problema, resultado esperado, quem é afetado, restrições,
+fora de escopo e exceções.</p>
+<p><strong>Ele não lê o código nem a base — de propósito.</strong> Quem lê a solução existente antes de entender o
+problema acaba entrevistando em direção ao que já existe. Comparar com o que já está documentado é
+trabalho do assistente seguinte.</p>
+<p><strong>Quando ele te trava:</strong> se faltar o problema ou o resultado esperado, ele não grava nada e
+devolve as perguntas. Isso é o certo — um briefing sem problema definido gera uma story sobre
+nada.</p>
+<hr />
+<h3>2. <code>po-refinar-negocio</code> — do briefing à conferência</h3>
+<p><strong>Quando usar:</strong> logo depois do briefing, sempre. É a etapa que mais evita retrabalho.</p>
+<p><strong>Como funciona:</strong> ele confronta o seu briefing com o que já está documentado do produto e da
+tribo.</p>
+<p><strong>O que você recebe:</strong> as regras existentes que tocam a demanda (cada uma com o arquivo de
+origem), os conflitos com regra vigente, se a demanda já foi resolvida em outro lugar, o impacto
+em jornadas existentes e o que muda no contrato.</p>
+<p><strong>Quando ele te trava:</strong> se a demanda contrariar uma regra que está valendo, ele descreve o
+conflito, transforma em pergunta e para. Ele <strong>não escolhe</strong> qual regra vale — isso é decisão de
+negócio, e é sua.</p>
+<hr />
+<h3>3. <code>po-gerar-user-story</code> — do refinamento à story</h3>
+<p><strong>Quando usar:</strong> só depois do refinamento estar sem conflito e sem lacuna bloqueante.</p>
+<p><strong>Como funciona:</strong> ele apenas formata o que já foi decidido. Nesta etapa nada novo é decidido.</p>
+<p><strong>O que você recebe:</strong> duas coisas. A story pronta para colar no Jira, com cada critério de aceite
+ligado à sua origem; e uma cópia guardada no histórico, registrando contra qual versão das regras
+a story foi escrita.</p>
+<p><strong>Quando ele te trava:</strong> se o refinamento tiver conflito em aberto ou lacuna bloqueante, ele se
+recusa a escrever. Story bem formatada em cima de decisão que não existe é o erro mais caro que
+tudo isso existe para evitar.</p>
+<hr />
+<h3>4. <code>po-curar-fonte</code> — do documento à base</h3>
+<p><strong>Quando usar:</strong> você tem uma norma do Bacen, uma política interna, um contrato, uma ata ou um
+resumo de conversa do Teams que carrega regra de negócio.</p>
+<p><strong>Como funciona:</strong> você larga o arquivo na pasta <code>inbox/</code> e pede para ele processar.</p>
+<p><strong>O que você recebe:</strong> uma ficha organizada, com o trecho literal do documento de um lado e a
+interpretação de negócio do outro — nunca misturados. Mais o link da fonte e um nível de confiança.</p>
+<p><strong>Sobre o nível de confiança:</strong> resolução do Bacen é <code>alta</code>; ata de reunião é <code>media</code>; resumo de
+conversa é <code>baixa</code>. Os outros assistentes repetem esse nível ao citar. É a diferença entre
+"segundo a Resolução 4.966" e "segundo uma ata de reunião".</p>
+<hr />
+<h2>O fluxo completo, passo a passo</h2>
+<p><strong>1. Abra o assistente de discovery e descreva a necessidade.</strong>
+Fale como você falaria com um colega. Não tente escrever bonito.</p>
+<p><strong>2. Responda às perguntas dele.</strong>
+Se não souber, diga "não sei". Isso vira uma lacuna registrada — e lacuna registrada é
+informação, não fracasso.</p>
+<p><strong>3. Confira o briefing.</strong>
+Leia inteiro. É mais fácil corrigir agora do que depois de a story existir.</p>
+<p><strong>4. Rode o refinamento.</strong>
+Peça: <em>"Use o agente po-refinar-negocio com o briefing de RNG-1234."</em></p>
+<p><strong>5. Leia os conflitos com atenção.</strong>
+Esta é a parte mais valiosa de todo o fluxo. Cada conflito é uma decisão que precisa ser tomada
+por alguém — e é muito mais barato tomá-la agora.</p>
+<p><strong>6. Se houver conflito, decida antes de continuar.</strong>
+Leve para quem decide. Depois registre: <em>"Registre a decisão que tomamos sobre o prazo máximo."</em></p>
+<p><strong>7. Gere a story.</strong>
+Peça: <em>"Use o agente po-gerar-user-story para RNG-1234."</em></p>
+<p><strong>8. Revise e cole no Jira.</strong>
+Confira se cada critério de aceite tem origem e leve junto a seção "Em aberto".</p>
+<hr />
+<h2>Boas práticas</h2>
+<h3>Faça</h3>
+<ul>
+<li><strong>Uma demanda por vez.</strong> Cada demanda tem sua pasta e seu contexto.</li>
+<li><strong>Responda com números quando tiver.</strong> "Uns 30% dos casos" vale mais que "muitos casos".</li>
+<li><strong>Diga "não sei" quando não souber.</strong> É a resposta mais útil que você pode dar.</li>
+<li><strong>Sempre responda "o que está fora de escopo".</strong> O silêncio nessa pergunta é a maior fonte de
+  retrabalho no refinamento técnico.</li>
+<li><strong>Leve as lacunas para a story.</strong> Elas ficam visíveis na seção "Em aberto" e são discutidas no
+  refinamento com o time.</li>
+<li><strong>Registre a decisão quando ela acontecer.</strong> Uma decisão registrada hoje economiza uma
+  arqueologia daqui a seis meses.</li>
+</ul>
+<h3>Não faça</h3>
+<ul>
+<li><strong>Não peça para ele "completar o resto".</strong> Ele foi construído para não fazer isso. Insistir só
+  gasta seu tempo.</li>
+<li><strong>Não aceite critério de aceite sem origem.</strong> Se aparecer um sem a linha de origem, é bug —
+  avise o time de tooling.</li>
+<li><strong>Não pule o refinamento.</strong> Ir do briefing direto para a story é onde nasce a story bonita e
+  errada.</li>
+<li><strong>Não use o histórico para saber como o produto funciona hoje.</strong> Ele guarda o que foi pedido um
+  dia, não o que vale agora. Para o que vale hoje, pergunte ao assistente.</li>
+<li><strong>Não corrija a base "no braço" quando discordar dela.</strong> Registre uma decisão. A base espelha o
+  que está em produção; se ela estiver errada, o problema é maior que um texto.</li>
+</ul>
+<hr />
+<h2>Quando algo dá errado</h2>
+<p><strong>"Ele disse que a base não cobre o assunto."</strong>
+É uma resposta correta, não uma falha. Significa que o conhecimento ainda não foi escrito. Leve o
+tema para a conferência de base da sprint.</p>
+<p><strong>"Ele apontou um conflito que eu acho que não existe."</strong>
+Pode ser regra desatualizada na base. Confira com um desenvolvedor. Se a base estiver errada,
+isso vira uma decisão registrada — e a base melhora.</p>
+<p><strong>"Ele se recusou a gerar a story."</strong>
+Falta uma decisão ou uma resposta. A mensagem dele diz exatamente o quê. Resolva e peça de novo.</p>
+<p><strong>"A resposta veio sem citar arquivo nenhum."</strong>
+Não confie. Peça: <em>"De qual arquivo você tirou isso?"</em> Se ele não souber responder, a informação
+não está na base.</p>
+<p><strong>"Ele citou uma regra que não vale mais."</strong>
+Confira se ele citou algo de <code>em-voo</code> (ainda não chegou ao cliente) ou do histórico. Avise o time
+de tooling: pode ser ajuste no assistente.</p>
+<hr />
+<h2>Palavras que você vai encontrar</h2>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Termo</th>
+<th>O que significa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>[NÃO RESPONDIDO]</strong></td>
+<td>uma lacuna que ninguém respondeu. Fica visível de propósito</td>
+</tr>
+<tr>
+<td><strong>base</strong></td>
+<td>o conjunto de arquivos com as regras e decisões do produto</td>
+</tr>
+<tr>
+<td><strong>publicado</strong></td>
+<td>o que está valendo em produção agora</td>
+</tr>
+<tr>
+<td><strong>em-voo</strong></td>
+<td>já foi desenvolvido, ainda não chegou ao cliente</td>
+</tr>
+<tr>
+<td><strong>histórico</strong></td>
+<td>stories entregues, guardadas para consulta e auditoria</td>
+</tr>
+<tr>
+<td><strong>decisão</strong></td>
+<td>algo que foi decidido por pessoas, com data e responsável</td>
+</tr>
+<tr>
+<td><strong>PR</strong></td>
+<td>a forma como uma mudança na base é revisada antes de valer</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2>Onde pedir ajuda</h2>
+<p>Dúvida sobre uma regra do produto: pergunte ao assistente primeiro. Se ele não souber, procure a
+squad responsável.</p>
+<p>Dúvida sobre o funcionamento dos assistentes, ou algo que parece um defeito: procure o time de
+tooling da tribo.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carga Inicial da Base</title>
+<style>
+:root{
+  --paper:#F7F5F1;--surface:#FFFFFF;--surface-2:#EFEBE4;
+  --ink:#171A19;--ink-2:#4F5452;--ink-3:#797E7C;
+  --rule:#DDD8CE;--rule-strong:#BFB8AA;
+  --brand:#1B5468;--brand-soft:#E3ECEF;
+  --warn:#8A6410;--warn-soft:#F3EAD4;
+  --shadow:0 1px 2px rgba(23,26,25,.05),0 8px 24px -14px rgba(23,26,25,.18);
+  --f-display:"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  --f-body:Cambria,Georgia,"Times New Roman",serif;
+  --f-mono:"Cascadia Mono",Consolas,ui-monospace,"Courier New",monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#131718;--surface:#1B2022;--surface-2:#222829;
+  --ink:#ECE9E3;--ink-2:#A5ABA9;--ink-3:#7F8785;
+  --rule:#2D3436;--rule-strong:#404A4C;
+  --brand:#77B7CD;--brand-soft:#16323E;
+  --warn:#D8AE55;--warn-soft:#332A11;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -14px rgba(0,0,0,.6);}}
+:root[data-theme="dark"]{
+  --paper:#131718;--surface:#1B2022;--surface-2:#222829;
+  --ink:#ECE9E3;--ink-2:#A5ABA9;--ink-3:#7F8785;
+  --rule:#2D3436;--rule-strong:#404A4C;
+  --brand:#77B7CD;--brand-soft:#16323E;
+  --warn:#D8AE55;--warn-soft:#332A11;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -14px rgba(0,0,0,.6);}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);
+  font-size:16.5px;line-height:1.65;-webkit-font-smoothing:antialiased}
+main{max-width:78ch;margin:0 auto;padding:2.6rem 1.4rem 5rem}
+h1,h2,h3,h4{font-family:var(--f-display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:2.15rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.8rem}
+h2{font-size:1.5rem;font-weight:600;letter-spacing:-.014em;margin:2.6rem 0 .9rem;
+  padding-top:1.4rem;border-top:1px solid var(--rule)}
+h3{font-size:1.15rem;font-weight:600;margin:1.8rem 0 .5rem;color:var(--brand)}
+h4{font-size:1rem;font-weight:600;margin:1.2rem 0 .35rem}
+p{margin:0 0 .9rem}
+ul,ol{margin:0 0 1rem;padding-left:1.4rem}
+li{margin-bottom:.4rem}
+li>ul,li>ol{margin-top:.4rem}
+strong{font-weight:600}
+hr{border:0;border-top:1px solid var(--rule);margin:2.2rem 0}
+a{color:var(--brand);text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+code{font-family:var(--f-mono);font-size:.85em;background:var(--surface-2);
+  border:1px solid var(--rule);padding:.08em .34em;border-radius:3px}
+pre{background:var(--surface-2);border:1px solid var(--rule);border-radius:5px;
+  padding:.95rem 1.05rem;overflow-x:auto;margin:0 0 1.1rem;box-shadow:var(--shadow)}
+pre code{background:none;border:0;padding:0;font-size:.78rem;line-height:1.65;color:var(--ink-2)}
+blockquote{margin:0 0 1.1rem;padding:.85rem 1.1rem;border-left:3px solid var(--warn);
+  background:var(--warn-soft);border-radius:0 5px 5px 0}
+blockquote p{margin:0}
+table{border-collapse:collapse;width:100%;font-size:.92rem;margin:0}
+.tw{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--surface);
+  box-shadow:var(--shadow);margin:0 0 1.2rem}
+th,td{text-align:left;padding:.62rem .8rem;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.5}
+thead th{font-family:var(--f-mono);font-size:.68rem;font-weight:600;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--ink-3);background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:0}
+.tt{position:fixed;top:.9rem;right:.9rem;z-index:50;font-family:var(--f-mono);font-size:.66rem;
+  font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--rule-strong);border-radius:3px;
+  padding:.4rem .58rem;cursor:pointer;box-shadow:var(--shadow)}
+.tt:hover{color:var(--ink)}
+@media print{
+  :root,:root[data-theme="dark"]{--paper:#fff;--surface:#fff;--surface-2:#F2EFE9;
+    --ink:#111;--ink-2:#3A3E3C;--ink-3:#696F6C;--rule:#CFC9BD;--rule-strong:#A9A296;
+    --brand:#123F50;--brand-soft:#EAF1F4;--warn:#6E4E08;--warn-soft:#F5EEDB;--shadow:none}
+  body{background:#fff;font-size:10.5pt}
+  .tt{display:none} main{max-width:none;padding:0}
+  pre,blockquote,.tw{break-inside:avoid} h1,h2,h3{break-after:avoid}
+  pre code{font-size:8.5pt} a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<button class="tt" id="tt" type="button" aria-label="Alternar tema">Tema</button>
+<script>(function(){var r=document.documentElement,b=document.getElementById('tt'),s=null;
+try{s=localStorage.getItem('kb-tema')}catch(e){}if(s)r.setAttribute('data-theme',s);
+b.addEventListener('click',function(){var d=matchMedia('(prefers-color-scheme: dark)').matches;
+var a=r.getAttribute('data-theme')||(d?'dark':'light'),n=a==='dark'?'light':'dark';
+r.setAttribute('data-theme',n);try{localStorage.setItem('kb-tema',n)}catch(e){}});})();</script>
+<main>
+<h1>Carga inicial da base — do <code>recr-fed-agc-reneg</code> para o <code>recr-cmn-tribo-knowledge</code></h1>
+<p>Manual da primeira fase, feito para rodar na máquina Windows do trabalho. Nada aqui depende de
+pipeline: é você, dois repositórios clonados e o Copilot app.</p>
+<hr />
+<h2>0. Antes de começar (15 minutos)</h2>
+<p><strong>Renomeie a pasta da squad para o nome do repositório de produto.</strong> O pacote veio com
+<code>squads/cockpit-renegociacao/</code>. Trocar agora, com a base vazia, custa um minuto; depois de 40
+arquivos, custa um pull request grande e quebra os caminhos citados nas stories.</p>
+<pre><code class="language-powershell">cd C:\dev\recr-cmn-tribo-knowledge
+git mv squads\cockpit-renegociacao squads\recr-fed-agc-reneg
+
+# ajusta o campo produto: nos arquivos semeados
+Get-ChildItem -Recurse squads\recr-fed-agc-reneg -Filter *.md |
+  ForEach-Object {
+    (Get-Content $_.FullName -Raw) -replace 'produto: cockpit-renegociacao','produto: recr-fed-agc-reneg' |
+      Set-Content $_.FullName -NoNewline
+  }
+
+node ferramentas\gera-index.mjs
+node ferramentas\valida-frontmatter.mjs
+</code></pre>
+<p>Confira também:</p>
+<ul>
+<li>[ ] <code>node --version</code> responde (o validador precisa de Node 18+).</li>
+<li>[ ] Os dois repositórios clonados lado a lado, por exemplo em <code>C:\dev\</code>.</li>
+<li>[ ] Se a política proíbe <code>.github/</code> <strong>neste</strong> repositório, renomeie <code>.github\agents</code> e
+      <code>.github\skills</code> para <code>.agents\agents</code> e <code>.agents\skills</code> antes de qualquer coisa.</li>
+</ul>
+<hr />
+<h2>1. Como a carga manual funciona</h2>
+<p>Uma sessão do Copilot app enxerga <strong>um</strong> repositório. Os agentes moram no repositório de
+conhecimento; o código mora no <code>recr-fed-agc-reneg</code>. Então a carga inicial tem três movimentos:</p>
+<ol>
+<li><strong>Sessão no <code>recr-fed-agc-reneg</code></strong> — você roda os prompts de extração. O agente lê o código e
+   devolve markdown pronto.</li>
+<li><strong>Você copia</strong> o markdown para o arquivo correspondente em <code>recr-cmn-tribo-knowledge</code>.</li>
+<li><strong>Valida e commita</strong> no repositório de conhecimento.</li>
+</ol>
+<p>Isso é deliberado, não uma limitação a contornar: a cópia manual é o ponto onde <strong>você lê o que
+vai ser publicado</strong>. Na Onda 0 esse é o controle de qualidade inteiro. Automatizar antes de
+existir julgamento humano só enche a base mais rápido.</p>
+<blockquote>
+<p><strong>Não commite nada no <code>recr-fed-agc-reneg</code>.</strong> A extração é leitura. Nenhum arquivo novo entra
+no repositório de produto nesta fase.</p>
+</blockquote>
+<hr />
+<h2>2. Ordem de extração, e por que essa ordem</h2>
+<p>Nem todo arquivo carrega a mesma densidade de negócio. Siga de cima para baixo e pare quando a
+base já responder às perguntas que o PO faz — não busque cobertura.</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Fonte no seu Angular</th>
+<th>O que entrega</th>
+<th>Destino</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>grafo do Graphify + estrutura de pastas</td>
+<td>inventário: o que existe</td>
+<td><code>squads/recr-fed-agc-reneg/_INVENTARIO.md</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>arquivos de i18n, labels, mensagens</td>
+<td>vocabulário real do gerente</td>
+<td><code>tribo/glossario.md</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>app.routes.ts</code> + <code>renegociacaoStore</code> (NgRx Signals)</td>
+<td>jornadas, estados e transições</td>
+<td><code>squads/recr-fed-agc-reneg/publicado/jornadas.md</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>validators de formulário + guards + mensagens de erro</td>
+<td><strong>as regras de negócio</strong></td>
+<td><code>squads/recr-fed-agc-reneg/publicado/regras-negocio.md</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>services, interfaces e tratamento de erro HTTP</td>
+<td>contratos, em linguagem de negócio</td>
+<td><code>squads/recr-fed-agc-reneg/publicado/contratos.md</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>O item 4 é o mais valioso e é onde você deve gastar mais tempo. Validador é onde a regra vive de
+verdade: ele diz o que o sistema <strong>impede</strong>, e é isso que o PO precisa saber antes de pedir algo
+que o sistema já proíbe.</p>
+<hr />
+<h2>3. Os cinco prompts</h2>
+<p>Abra a sessão do Copilot app apontando para <code>recr-fed-agc-reneg</code> e cole um prompt de cada vez.
+Rode um, revise, só então rode o próximo. Rodar os cinco de uma vez produz um volume que ninguém
+revisa — e conteúdo não revisado é exatamente o que a base não pode ter.</p>
+<h3>Prompt 1 — Inventário</h3>
+<pre><code class="language-text">Você vai montar um INVENTÁRIO deste projeto Angular. Inventário é uma LISTA do que existe,
+não uma descrição do que significa.
+
+Leia a estrutura do projeto e o grafo gerado pelo Graphify (procure a pasta graphify-out ou
+equivalente; se não encontrar, me diga e use apenas a estrutura de pastas).
+
+Produza um markdown com quatro listas, cada item numa linha, marcado como [ ] sem descrição:
+
+## Rotas e telas
+## Estados do renegociacaoStore
+## Chamadas de backend
+## Validações e guards
+
+Regras:
+- Cada item traz o caminho do arquivo onde foi encontrado.
+- NÃO descreva o que cada item faz. Só liste.
+- Se não conseguir determinar algo, escreva [NÃO RESPONDIDO] em vez de supor.
+
+Devolva o markdown completo na resposta.
+</code></pre>
+<h3>Prompt 2 — Glossário</h3>
+<pre><code class="language-text">Leia TODOS os arquivos de internacionalização, labels e mensagens deste projeto
+(procure por i18n, assets/i18n, *.json de tradução, e constantes de texto).
+
+Extraia o VOCABULÁRIO que aparece na tela para o usuário — os termos de negócio, não os
+técnicos. Para cada termo:
+
+- o termo exatamente como aparece na tela;
+- em que contexto aparece (tela, campo, mensagem);
+- o caminho do arquivo e a chave onde está.
+
+Regras:
+- NÃO invente a definição do termo. Você está listando o que existe, e a definição será
+  escrita por uma pessoa depois. Deixe a linha de definição como &lt;a preencher&gt;.
+- Ignore termos puramente técnicos (loading, erro genérico, botão voltar).
+- Se dois termos parecerem sinônimos, liste os dois e marque a suspeita.
+
+Formato de saída: markdown, uma seção &quot;## &lt;termo&gt;&quot; por termo.
+</code></pre>
+<h3>Prompt 3 — Jornadas e estados</h3>
+<pre><code class="language-text">Leia o arquivo de rotas (app.routes.ts e arquivos de rota de features) e o store
+renegociacaoStore (NgRx Signals).
+
+Produza, em linguagem de NEGÓCIO, não técnica:
+
+## Jornadas
+Para cada fluxo que um gerente percorre: os passos na ordem, do ponto de vista dele.
+
+## Estados
+A lista de estados que uma renegociação pode assumir, com o nome exato usado no código.
+
+## Transições permitidas
+De qual estado para qual estado é possível ir, e o que dispara a transição.
+
+## Transições proibidas
+O que o código explicitamente impede.
+
+Regras:
+- Cada afirmação carrega o caminho do arquivo e, quando possível, a linha.
+- NÃO descreva implementação (service, effect, signal). Descreva o que o usuário vive.
+- Onde o código não deixar claro, escreva [NÃO RESPONDIDO]. Não deduza a intenção.
+</code></pre>
+<h3>Prompt 4 — Regras de negócio (o mais importante)</h3>
+<pre><code class="language-text">Leia os validadores de formulário, os guards de rota e o mapeamento de mensagens de erro
+deste projeto.
+
+Para CADA validação encontrada, escreva uma regra de negócio no formato:
+
+## &lt;nome da regra, em linguagem de negócio&gt;
+- **Regra:** &lt;o que o sistema impede ou exige, do ponto de vista do gerente&gt;
+- **Gatilho:** &lt;quando a validação acontece&gt;
+- **Exceção:** &lt;quando não se aplica, se houver&gt;
+- **Mensagem ao usuário:** &lt;o texto exato que aparece na tela&gt;
+- **Origem:** `&lt;caminho/do/arquivo.ts&gt;` linha &lt;n&gt;
+- **Trecho:**
+  ```ts
+  &lt;as 1 a 5 linhas de código que sustentam a regra&gt;
+  ```
+
+Regras que você deve seguir:
+- O campo Trecho é OBRIGATÓRIO. Sem trecho citado, não escreva a regra.
+- NÃO agregue nem generalize duas validações numa regra só.
+- NÃO explique o porquê da regra. Você não sabe o porquê — isso é conhecimento de negócio
+  e será preenchido por uma pessoa.
+- Valor numérico (limite, prazo, percentual) só entra se estiver literalmente no código.
+- Se a validação vier de configuração externa ou feature flag, diga isso e marque
+  [NÃO RESPONDIDO] no valor.
+</code></pre>
+<h3>Prompt 5 — Contratos</h3>
+<pre><code class="language-text">Leia os services HTTP, as interfaces de request/response e o tratamento de erro deste projeto.
+
+Produza, para cada operação que o frontend chama, uma ficha em linguagem de negócio:
+
+## &lt;o que a operação faz, do ponto de vista do gerente&gt;
+| Informação | Obrigatória | Observação |
+| --- | --- | --- |
+| &lt;campo, com o nome de negócio se existir&gt; | sim/não | &lt;regra&gt; |
+
+**Erros que o gerente vê:** &lt;código&gt; → &lt;o que aconteceu, em português&gt;
+**Origem:** `&lt;caminho do service e da interface&gt;`
+
+Regras:
+- NÃO inclua path, verbo HTTP, header ou payload bruto. Isso é detalhe técnico e polui a base.
+- Obrigatoriedade só a partir do que está no código (tipo, validação, `?` no TypeScript).
+- Mensagem de erro: use o texto exato exibido, não a descrição técnica do status.
+- O que não estiver no código do frontend fica [NÃO RESPONDIDO] — o frontend não conhece a
+  regra inteira do backend, e fingir que conhece é o pior erro possível aqui.
+</code></pre>
+<hr />
+<h2>4. Depois de cada prompt: revise antes de copiar</h2>
+<p>Três perguntas, sempre, antes de colar no repositório de conhecimento:</p>
+<ol>
+<li><strong>Toda afirmação tem origem?</strong> Linha sem caminho de arquivo não entra.</li>
+<li><strong>Tem número inventado?</strong> Procure prazos, limites e percentuais e confirme cada um no código.</li>
+<li><strong>Tem interpretação disfarçada de fato?</strong> Frases como "provavelmente para evitar" são leitura
+   do modelo, não regra. Apague ou mova para uma decisão de negócio.</li>
+</ol>
+<p>O que sobreviver às três perguntas é bom o bastante para a Onda 0.</p>
+<hr />
+<h2>5. Colar, validar, commitar</h2>
+<pre><code class="language-powershell">cd C:\dev\recr-cmn-tribo-knowledge
+git checkout -b carga-inicial-recr-fed-agc-reneg
+
+# cole o conteúdo revisado nos arquivos, preservando o frontmatter que já existe neles.
+# depois:
+node ferramentas\gera-index.mjs
+node ferramentas\valida-frontmatter.mjs
+
+git add .
+git commit -m &quot;carga inicial: regras, jornadas e glossario do recr-fed-agc-reneg&quot;
+git push -u origin carga-inicial-recr-fed-agc-reneg
+</code></pre>
+<p>Abra o PR e peça revisão a <strong>um PO</strong>, não a outro dev. O que interessa nesta revisão não é se o
+markdown está bonito — é se o PO entende as frases sem precisar perguntar nada.</p>
+<p><strong>Não apague o frontmatter dos arquivos semeados.</strong> O validador reprova sem ele, e os campos
+<code>prateleira</code>, <code>gerado_por</code> e <code>atualizado_em</code> são o que faz o agente saber o que pode citar como
+regra vigente. Atualize <code>atualizado_em</code> e mantenha <code>gerado_por: humano</code> — vira <code>robo</code> só quando o
+workflow assumir, na Onda 1.</p>
+<hr />
+<h2>6. Trazer uma norma do Bacen</h2>
+<p>Este caminho usa o agente <code>po-curar-fonte</code>, e a sessão é no repositório de <strong>conhecimento</strong>.</p>
+<h3>6.1 Colocar a fonte na caixa de entrada</h3>
+<p>O caminho que <strong>sempre funciona</strong>, mesmo com proxy corporativo bloqueando o site: abra a norma no
+navegador, copie o texto das seções que interessam e salve num arquivo.</p>
+<pre><code class="language-powershell">cd C:\dev\recr-cmn-tribo-knowledge
+notepad inbox\bacen-res-4966.md
+</code></pre>
+<p>Estrutura do arquivo — três linhas de cabeçalho e o texto colado:</p>
+<pre><code class="language-markdown">FONTE: BACEN — Resolução 4.966
+URL: https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?tipo=Resolu%C3%A7%C3%A3o&amp;numero=4966
+OBTIDO_EM: 2026-09-02
+
+&lt;cole aqui o texto das seções relevantes, sem editar&gt;
+</code></pre>
+<p>Se o site abrir a partir da máquina e o agente tiver rede, você pode salvar só a URL e pedir para
+ele buscar. Mas <strong>confira o que ele trouxe</strong>: página que voltou vazia por bloqueio de proxy vira
+ficha vazia com aparência de completa.</p>
+<h3>6.2 Rodar o agente</h3>
+<p>Na sessão do Copilot app sobre <code>recr-cmn-tribo-knowledge</code>:</p>
+<pre><code class="language-text">Use o agente po-curar-fonte.
+
+Processe o arquivo inbox/bacen-res-4966.md.
+
+Contexto: preciso saber o que esta resolução exige que afete renegociação e recuperação de
+crédito no cockpit do gerente (recr-fed-agc-reneg).
+
+Gere o arquivo em tribo/externas/ no formato da skill formato-fonte-externa, com:
+- a citação literal dos trechos que sustentam cada afirmação;
+- a leitura de negócio em seção separada, assinada;
+- confianca: alta (documento oficial);
+- as divergências, se houver, entre a norma e o que está publicado na base.
+
+Não parafraseie a norma. Se um trecho for longo, cite o trecho e resuma DEPOIS, na seção de
+leitura de negócio.
+</code></pre>
+<h3>6.3 O que sai, e onde</h3>
+<ul>
+<li><code>tribo/externas/bacen-res-4966.md</code> — a ficha estruturada.</li>
+<li><code>tribo/externas/fontes/bacen-res-4966.txt</code> — o texto original preservado (mova o arquivo da
+  <code>inbox/</code> para cá; a <code>inbox/</code> fica sempre vazia depois do processamento).</li>
+</ul>
+<p>Valide e abra o PR do mesmo jeito da seção 5. Se o agente apontar divergência entre a norma e uma
+regra publicada, <strong>não resolva no PR</strong>: abra uma decisão de negócio em
+<code>squads/recr-fed-agc-reneg/decisoes/</code> e leve a divergência para quem decide.</p>
+<hr />
+<h2>7. O que não fazer nesta fase</h2>
+<ul>
+<li><strong>Não peça "leia o repositório e gere as regras de negócio".</strong> Sai um documento plausível,
+  parcialmente inventado e impossível de auditar. Os prompts acima são estreitos de propósito.</li>
+<li><strong>Não documente por cobertura.</strong> Meta não é "todas as telas". É "as perguntas que o PO fez no
+  último mês têm resposta".</li>
+<li><strong>Não copie os agentes para <code>%USERPROFILE%\.copilot\agents\</code>.</strong> Essa pasta sobrescreve a do
+  repositório: um colega com cópia antiga usaria a versão errada sem perceber.</li>
+<li><strong>Não crie o workflow ainda.</strong> Ele entra quando a base provar que responde. Antes disso, ele só
+  enche mais rápido uma base que ninguém consulta.</li>
+</ul>
+</main>
+</body>
+</html>
