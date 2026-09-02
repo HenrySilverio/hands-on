@@ -1,0 +1,11 @@
+Copie os 5 arquivos .md desta pasta para:
+
+    <seu repo>/.github/agents/
+
+substituindo os que ja existem la.
+
+Se preferir pela web do GitHub: Add file > Upload files, arraste os .md,
+e no campo do caminho digite  .github/agents/  antes de confirmar.
+
+Observacao: no Windows e no Mac, pasta que comeca com ponto (.github) fica
+oculta no explorador de arquivos. Ela existe — so nao aparece por padrao.
