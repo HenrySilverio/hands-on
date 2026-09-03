@@ -1,0 +1,24 @@
+ONDE COLOCAR CADA ARQUIVO
+=========================
+
+agents/  ->  .github/agents/          (ou ~/.copilot/agents/ enquanto a excecao nao sai)
+  po-iniciar-discovery.agent.md
+  po-refinar-negocio.agent.md
+  po-gerar-user-story.agent.md
+  po-curar-fonte.agent.md
+  po-consulta.instrucao.md   -> NAO e agente. E o texto para colar no campo de
+                                instrucoes do Copilot Space.
+
+skills/  ->  cada um vira SKILL.md dentro da sua pasta:
+  navegar-base.SKILL.md            ->  .github/skills/navegar-base/SKILL.md
+  formato-fonte-externa.SKILL.md   ->  .github/skills/formato-fonte-externa/SKILL.md
+
+raiz/
+  valida-frontmatter.mjs  ->  ferramentas/valida-frontmatter.mjs
+
+Depois de copiar:
+  node ferramentas/gera-index.mjs
+  node ferramentas/valida-frontmatter.mjs
+
+Lembrete: .github e pasta oculta no Explorer e no Finder. Use "ls -a" ou ative
+"Itens ocultos" para confirmar que os arquivos chegaram.
